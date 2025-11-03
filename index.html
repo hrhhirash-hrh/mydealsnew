@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DealBooker - Exclusive Offers</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font for Tailwind -->
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <!-- Link to your custom stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+    <div id="app">
+        <!-- Header -->
+        <header class="bg-white shadow-md">
+            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex-shrink-0">
+                        <a href="#" class="text-2xl font-bold text-indigo-600">DealBooker</a>
+                    </div>
+                    <div>
+                        <a href="#admin-login" class="text-sm font-medium text-gray-500 hover:text-indigo-600">
+                            Admin Panel
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+            <!-- === USER: DEALS PAGE (Default) === -->
+            <section id="deals-page">
+                <h1 class="text-3xl font-extrabold text-gray-900 mb-6">Available Deals</h1>
+                
+                <!-- Loading Spinner for Deals -->
+                <div id="deals-loader" class="flex justify-center items-center h-64">
+                    <div class="spinner"></div>
+                </div>
+
+                <!-- Deals Grid -->
+                <div id="deals-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Deal cards will be inserted here by JavaScript -->
+                </div>
+                <p id="no-deals-message" class="hidden text-center text-gray-500 text-xl mt-10">No deals available at the moment. Please check back later!</p>
+            </section>
+
+            <!-- === ADMIN: LOGIN PAGE === -->
+            <section id="admin-login" class="hidden max-w-md mx-auto bg-white p-8 rounded-xl shadow-xl mt-10">
+                <h2 class="text-2xl font-bold text-center mb-6">Admin Login</h2>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                        <input type="text" id="username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-75">
+                        Login
+                    </button>
+                    <p id="login-error" class="text-red-500 text-sm text-center mt-4"></p>
+                </form>
+            </section>
+
+            <!-- === ADMIN: MAIN PANEL === -->
+            <section id="admin-panel" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-extrabold text-gray-900">Admin Panel</h2>
+                    <button id="logout-button" class="text-sm font-medium text-red-500 hover:text-red-700">Logout</button>
+                </div>
+
+                <!-- Admin Tabs -->
+                <div class="bg-white rounded-xl shadow-xl p-6">
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                            <button id="tab-add-deal" class="tab-button border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                Add Deal
+                            </button>
+                            <button id="tab-view-orders" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                View Orders
+                            </button>
+                            <button id="tab-view-deals" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                View/Copy Deals
+                            </button>
+                        </nav>
+                    </div>
+
+                    <!-- Add Deal Tab Content -->
+                    <div id="content-add-deal" class="tab-content mt-6">
+                        <form id="add-deal-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Product Info -->
+                            <div class="md:col-span-2 text-lg font-semibold text-gray-800 border-b pb-2">Product Info</div>
+                            <input type="text" id="productFor" placeholder="Product For (Buyer 1, Buyer 2...)" class="input-field" required>
+                            <input type="text" id="productName" placeholder="Product Name (e.g., Oppo K13x)" class="input-field" required>
+                            <input type="text" id="productVariant" placeholder="Product Variant (e.g., 6/128)" class="input-field" required>
+                            <input type="url" id="imageUrl" placeholder="Product Image URL" class="input-field md:col-span-2" required>
+                            <input type="url" id="productLink" placeholder="Product Link (Amazon, Flipkart, etc.)" class="input-field md:col-span-2" required>
+                            
+                            <!-- Financials -->
+                            <div class="md:col-span-2 text-lg font-semibold text-gray-800 border-b pb-2 mt-4">Financials</div>
+                            <input type="number" id="bookingAmount" placeholder="Product Booking Amount" class="input-field" required>
+                            <input type="number" id="commission" placeholder="Commission" class="input-field" required>
+                            <input type="number" id="returnAmount" placeholder="Return Amount" class="input-field" required>
+                            <input type="number" id="quantityNeeded" placeholder="Quantity Needed" class="input-field" required>
+
+                            <!-- Address Info -->
+                            <div class="md:col-span-2 text-lg font-semibold text-gray-800 border-b pb-2 mt-4">Address Info</div>
+                            <input type="text" id="code" placeholder="Code (e.g., your name + hrh)" class="input-field" required>
+                            <input type="text" id="addressHouse" placeholder="House/Flat/Apartment No" class="input-field" required>
+                            <input type="text" id="addressArea" placeholder="Area/Locality" class="input-field" required>
+                            <input type="text" id="addressLandmark" placeholder="Landmark" class="input-field">
+                            <input type="text" id="addressPincode" placeholder="Pincode" class="input-field" required>
+
+                            <!-- Submit -->
+                            <div class="md:col-span-2 mt-4">
+                                <button type="submit" class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                    Submit Deal
+                                </button>
+                                <p id="add-deal-message" class="text-center mt-4"></p>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- View Orders Tab Content -->
+                    <div id="content-view-orders" class="tab-content hidden mt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold">Received Orders</h3>
+                            <!-- Filter -->
+                            <div class="flex items-center space-x-2">
+                                <label for="order-filter" class="text-sm font-medium text-gray-700">Filter by:</label>
+                                <select id="order-filter" class="rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                    <option>All</option>
+                                    <!-- Options will be populated by JS (e.g., Buyer 1, Buyer 2) -->
+                                </select>
+                                <button id="refresh-orders-btn" class="p-2 bg-indigo-100 text-indigo-600 rounded-md hover:bg-indigo-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101A7.002 7.002 0 0112 4c2.52 0 4.735 1.116 6.134 2.866a1 1 0 11-1.554 1.268A5.002 5.002 0 0012 6c-2.023 0-3.744 1.178-4.57 2.825A1 1 0 016.99 9H10a1 1 0 110 2H5a1 1 0 01-1-1V4a1 1 0 011-1zm10 15a1 1 0 01-1-1v-2.101A7.002 7.002 0 018 16c-2.52 0-4.735-1.116-6.134-2.866a1 1 0 111.554-1.268A5.002 5.002 0 008 14c2.023 0 3.744-1.178 4.57 2.825a1 1 0 01.437.175H10a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 01-1 1z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Orders Loading Spinner -->
+                        <div id="orders-loader" class="flex justify-center items-center h-64">
+                            <div class="spinner"></div>
+                        </div>
+                        
+                        <!-- Orders Container -->
+                        <div id="orders-container" class="space-y-4">
+                            <!-- Order items will be inserted here by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- View Deals Tab Content -->
+                    <div id="content-view-deals" class="tab-content hidden mt-6">
+                        <h3 class="text-xl font-semibold mb-4">Available Deals</h3>
+                        <p class="text-sm text-gray-500 mb-4">Click "Copy to Form" to load a deal's data into the "Add Deal" form for modification or re-listing.</p>
+                        
+                        <!-- Deals Loading Spinner -->
+                        <div id="admin-deals-loader" class="flex justify-center items-center h-64">
+                            <div class="spinner"></div>
+                        </div>
+                        
+                        <!-- Deals Container -->
+                        <div id="admin-deals-container" class="space-y-4">
+                            <!-- Deal items will be inserted here by JavaScript -->
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- === MODALS === -->
+
+    <!-- Deal Detail Modal -->
+    <div id="deal-detail-modal" class="modal hidden">
+        <div class="modal-bg" onclick="closeModal('deal-detail-modal')"></div>
+        <div class="modal-content p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold text-gray-900" id="detail-product-name">Product Name</h3>
+                <button onclick="closeModal('deal-detail-modal')" class="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Purchase Link Button -->
+                <a id="detail-product-link" href="#" target="_blank" class="block w-full text-center bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-lg">
+                    Buy from Store (e.g., Amazon)
+                </a>
+
+                <!-- Details List -->
+                <div class="border-t border-b border-gray-200 divide-y divide-gray-200">
+                    <div class="py-3 flex justify-between text-sm"><span class="font-medium text-gray-500">Variant</span><span class="font-semibold text-gray-900" id="detail-product-variant"></span></div>
+                    <div class="py-3 flex justify-between text-sm"><span class="font-medium text-gray-500">Booking Amount</span><span class="font-semibold text-gray-900" id="detail-booking-amount"></span></div>
+                    <div class="py-3 flex justify-between text-sm"><span class="font-medium text-gray-500">Commission</span><span class="font-semibold text-green-600" id="detail-commission"></span></div>
+                    <div class="py-3 flex justify-between text-sm"><span class="font-medium text-gray-500">Return Amount</span><span class="font-semibold text-gray-900" id="detail-return-amount"></span></div>
+                </div>
+
+                <!-- Address Details -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">Delivery Address to Use:</h4>
+                    <address class="not-italic text-sm text-gray-700 space-y-1">
+                        <p><strong>Code:</strong> <span id="detail-address-code"></span></p>
+                        <p id="detail-address-house"></p>
+                        <p id="detail-address-area"></p>
+                        <p id="detail-address-landmark"></p>
+                        <p id="detail-address-pincode"></p>
+                    </address>
+                </div>
+                
+                <!-- Confirm Button -->
+                <button id="confirm-deal-button" class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-lg">
+                    Confirm Deal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Form Modal -->
+    <div id="booking-form-modal" class="modal hidden">
+        <div class="modal-bg"></div> <!-- No close on this one -->
+        <div class="modal-content p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold text-gray-900">Confirm Your Booking</h3>
+                <div class="text-lg font-bold text-red-600" id="booking-timer">10:00</div>
+            </div>
+            
+            <p class="text-sm text-gray-600 mb-4">
+                Please submit your details within 10 minutes to secure your deal.
+            </p>
+
+            <form id="booking-form">
+                <input type="hidden" id="booking-product-id">
+                <div class="space-y-4">
+                    <input type="text" id="userName" placeholder="Name Given on Address" class="input-field" required>
+                    <input type="tel" id="userMobile" placeholder="Mobile Number Given on Address" class="input-field" required>
+                    <input type="text" id="userDeliveryDate" placeholder="Expected Delivery Date (e.g., 01/10/2025)" class="input-field" onfocus="(this.type='date')" onblur="(this.type='text')" required>
+                    <input type="text" id="userUpiId" placeholder="Your UPI ID (for commission)" class="input-field" required>
+                    
+                    <p id="booking-error" class="text-red-500 text-sm text-center"></p>
+
+                    <div class="flex gap-4">
+                        <button type="button" id="cancel-booking-btn" class="w-1/3 bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-300">
+                            Cancel
+                        </button>
+                        <button type="submit" id="submit-booking-btn" class="w-2/3 bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                            <span class="submit-text">Submit Booking</span>
+                            <span class="submit-spinner hidden"><div class="spinner !w-6 !h-6 border-white/30 border-l-white mx-auto"></div></span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Simple Message Modal (for success/error) -->
+    <div id="message-modal" class="modal hidden">
+        <div class="modal-bg" onclick="closeModal('message-modal')"></div>
+        <div class="modal-content p-8 text-center">
+            <h3 id="message-title" class="text-2xl font-bold mb-4"></h3>
+            <p id="message-body" class="text-gray-600 mb-6"></p>
+            <button id="message-modal-close-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Load your custom JavaScript -->
+    <script src="main.js" defer></script>
+
+</body>
+</html>

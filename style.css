@@ -1,0 +1,71 @@
+/* Use a clean, modern font */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom styles for Tailwind */
+html {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom spinner for loading states */
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #4f46e5; /* indigo-600 */
+    animation: spin 1s ease infinite;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Hide elements smoothly */
+.hidden {
+    display: none;
+}
+
+/* Modal positioning */
+.modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: opacity 0.3s ease;
+}
+.modal-bg {
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+.modal-content {
+    position: relative;
+    z-index: 10;
+    background-color: white;
+    border-radius: 0.75rem; /* 12px */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 28rem; /* 448px */
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Utility classes for JS */
+.input-field {
+    width: 100%;
+    display: block;
+    border-radius: 0.375rem; /* 6px */
+    border: 1px solid #D1D5DB; /* gray-300 */
+    padding: 0.75rem 1rem; /* 12px 16px */
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.input-field:focus {
+    outline: none;
+    border-color: #4f46e5; /* indigo-600 */
+    box-shadow: 0 0 0 2px #c7d2fe; /* indigo-200 */
+}
