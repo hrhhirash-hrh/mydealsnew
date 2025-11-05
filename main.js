@@ -1,414 +1,1002 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DealBooker - Exclusive Offers</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Inter font for Tailwind -->
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <!-- Link to your custom stylesheet -->
-    <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-gray-100 text-gray-900">
+document.addEventListener('DOMContentLoaded', () => {
+    // --- STATE ---
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzT0e7GIJBLRLobQJdknhuItgF90KEwBd1OaAD8OKVZC29eIYeQfRiWfxVR-32X_noT/exec"; // --- Make sure this is your LATEST deployed URL ---
+    let adminToken = sessionStorage.getItem('adminToken');
+    let currentUser = JSON.parse(sessionStorage.getItem('currentUser')); // --- NEW ---
+    let currentDeals = [];
+    let bookingTimerInterval = null;
+    let uniqueBuyers = new Set();
 
-    <div id="app">
-        <!-- Header -->
-<!-- === NEW, CORRECTED HEADER === -->
-<header class="bg-white shadow-md">
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- This div correctly aligns Logo (left) and Links (right) -->
-        <div class="flex justify-between items-center h-16">
-            
-            <!-- Logo -->
-            <div class="flex-shrink-0">
-                <a href="#" class="text-2xl font-bold text-indigo-600">DealBooker</a>
-            </div>
+    // --- DOM SELECTORS ---
+    const pages = {
+        deals: document.getElementById('deals-page'),
+        adminLogin: document.getElementById('admin-login'),
+        adminPanel: document.getElementById('admin-panel'),
+        userDashboard: document.getElementById('user-dashboard-page'), // --- NEW ---
+    };
+    const modals = {
+        dealDetail: document.getElementById('deal-detail-modal'),
+        bookingForm: document.getElementById('booking-form-modal'),
+        message: document.getElementById('message-modal'),
+        userLogin: document.getElementById('user-login-modal'), // --- NEW ---
+        loginPrompt: document.getElementById('login-prompt-modal'), // --- NEW ---
+    };
+    const dealsGrid = document.getElementById('deals-grid');
+    const dealsLoader = document.getElementById('deals-loader');
+    const noDealsMessage = document.getElementById('no-deals-message');
+    
+    // Admin Login
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+    const logoutButton = document.getElementById('logout-button');
 
-            <!-- Right-side Links Container -->
-            <div class="flex items-center space-x-4">
-                
-                <!-- User Auth Links (will be controlled by JS) -->
-                <div id="user-auth-links">
-                    <button id="user-login-button" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                        User Login
-                    </button>
-                    <div id="user-dashboard-button" class="hidden flex items-center space-x-4">
-                        <a href="#user-dashboard" id="user-dashboard-link" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                            My Dashboard
-                        </a>
-                        <button id="user-logout-button" class="text-sm font-medium text-red-500 hover:text-red-700">
-                            (Logout)
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Separator -->
-                <span class="text-gray-300">|</span>
+    // --- NEW: User Auth ---
+// --- NEW: User Auth (Safer Selectors) ---
+    const userAuthLinks = document.getElementById('user-auth-links');
+    const userLoginButton = document.getElementById('user-login-button');
+    const userDashboardButton = document.getElementById('user-dashboard-button');
+    const userLogoutButton = document.getElementById('user-logout-button');
+    const adminLoginLink = document.querySelector('a[href="#admin-login"]');
+    // We find the separator by its relationship to the admin link
+    const headerSeparator = adminLoginLink ? adminLoginLink.previousElementSibling : null;
+    const userLoginForm = document.getElementById('user-login-form');
+    const userLoginSubmitBtn = document.getElementById('user-login-submit-btn');
+    const userLoginError = document.getElementById('user-login-error');
 
-                <!-- Admin Panel Link -->
-                <a href="#admin-login" class="text-sm font-medium text-gray-500 hover:text-indigo-600">
-                    Admin Panel
-                </a>
-            </div>
+    // --- NEW: User Dashboard ---
+    const userWelcomeMessage = document.getElementById('user-welcome-message');
+    const userOrdersLoader = document.getElementById('user-orders-loader');
+    const userOrdersContainer = document.getElementById('user-orders-container');
 
-        </div>
-    </nav>
-</header>
-<!-- === END OF NEW HEADER === -->
+    // --- NEW: Login Prompt Modal ---
+    const loginPromptCloseBtn = document.getElementById('login-prompt-close-btn');
+    const loginPromptLoginBtn = document.getElementById('login-prompt-login-btn');
 
-        <!-- Main Content Area -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    // Admin Panel
+    const adminTabs = {
+        addDeal: document.getElementById('tab-add-deal'),
+        viewOrders: document.getElementById('tab-view-orders'),
+        viewDeals: document.getElementById('tab-view-deals'),
+        manageUsers: document.getElementById('tab-manage-users'), // --- NEW ---
+    };
+    const adminContents = {
+        addDeal: document.getElementById('content-add-deal'),
+        viewOrders: document.getElementById('content-view-orders'),
+        viewDeals: document.getElementById('content-view-deals'),
+        manageUsers: document.getElementById('content-manage-users'), // --- NEW ---
+    };
+    const addDealForm = document.getElementById('add-deal-form');
+    const addDealMessage = document.getElementById('add-deal-message');
 
-            <!-- === USER: DEALS PAGE (Default) === -->
-            <section id="deals-page">
-                <h1 class="text-3xl font-extrabold text-gray-900 mb-6">Available Deals</h1>
-                
-                <!-- Loading Spinner for Deals -->
-                <div id="deals-loader" class="flex justify-center items-center h-64">
-                    <div class="spinner"></div>
-                </div>
+    // --- NEW: Admin Manage Users ---
+    const addUserForm = document.getElementById('add-user-form');
+    const addUserMessage = document.getElementById('add-user-message');
+    const usersListLoader = document.getElementById('users-list-loader');
+    const usersListContainer = document.getElementById('users-list-container');
 
-                <!-- Deals Grid -->
-                <div id="deals-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Deal cards will be inserted here by JavaScript -->
-                </div>
-                <p id="no-deals-message" class="hidden text-center text-gray-500 text-xl mt-10">No deals available at the moment. Please check back later!</p>
-            </section>
+    // Admin Orders
+    const ordersLoader = document.getElementById('orders-loader');
+    const ordersContainer = document.getElementById('orders-container');
+    const orderFilter = document.getElementById('order-filter');
+    const orderStatusFilter = document.getElementById('order-status-filter');
+    const refreshOrdersBtn = document.getElementById('refresh-orders-btn');
 
-            <!-- === ADMIN: LOGIN PAGE === -->
-            <section id="admin-login" class="hidden max-w-md mx-auto bg-white p-8 rounded-xl shadow-xl mt-10">
-                <h2 class="text-2xl font-bold text-center mb-6">Admin Login</h2>
-                <form id="login-form">
-                    <div class="mb-4">
-                        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                        <input type="text" id="username" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
-                    </div>
-                    <div class="mb-6">
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input type="password" id="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-75">
-                        Login
-                    </button>
-                    <p id="login-error" class="text-red-500 text-sm text-center mt-4"></p>
-                </form>
-            </section>
+    // Admin Deals
+    const adminDealsLoader = document.getElementById('admin-deals-loader');
+    const adminDealsContainer = document.getElementById('admin-deals-container');
 
-            <!-- === ADMIN: MAIN PANEL === -->
-            <section id="admin-panel" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-extrabold text-gray-900">Admin Panel</h2>
-                    <button id="logout-button" class="text-sm font-medium text-red-500 hover:text-red-700">Logout</button>
-                </div>
+    // Deal Detail Modal (no changes)
+    const detailProductName = document.getElementById('detail-product-name');
+    const detailProductLink = document.getElementById('detail-product-link');
+    const detailProductVariant = document.getElementById('detail-product-variant');
+    const detailBookingAmount = document.getElementById('detail-booking-amount');
+    const detailCommission = document.getElementById('detail-commission');
+    const detailReturnAmount = document.getElementById('detail-return-amount');
+    const detailAddressCode = document.getElementById('detail-address-code');
+    const detailAddressHouse = document.getElementById('detail-address-house');
+    const detailAddressArea = document.getElementById('detail-address-area');
+    const detailAddressLandmark = document.getElementById('detail-address-landmark');
+    const detailAddressPincode = document.getElementById('detail-address-pincode');
+    let confirmDealButton = document.getElementById('confirm-deal-button');
 
-                <!-- Admin Tabs -->
-                <div class="bg-white rounded-xl shadow-xl p-6">
-                    <div class="border-b border-gray-200">
-                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                            <button id="tab-add-deal" class="tab-button border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                Add Deal
-                            </button>
-                            <button id="tab-view-orders" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                View Orders
-                            </button>
-                            <button id="tab-view-deals" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                View/Copy Deals
-                            </button>
-                            <button id="tab-manage-users" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                                 Manage Users
-                            </button>
-                        </nav>
-                    </div>
+    // Booking Form Modal (no changes)
+    const bookingForm = document.getElementById('booking-form');
+    const bookingTimer = document.getElementById('booking-timer');
+    const bookingProductId = document.getElementById('booking-product-id');
+    const bookingError = document.getElementById('booking-error');
+    const cancelBookingBtn = document.getElementById('cancel-booking-btn');
+    const submitBookingBtn = document.getElementById('submit-booking-btn');
+    
+    // Message Modal (no changes)
+    const messageTitle = document.getElementById('message-title');
+    const messageBody = document.getElementById('message-body');
+    const messageModalCloseBtn = document.getElementById('message-modal-close-btn');
 
-                    <!-- Add Deal Tab Content -->
-                    <div id="content-add-deal" class="tab-content mt-6">
-                        <form id="add-deal-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Product Info -->
-                            <div class="md:col-span-2 text-lg font-semibold text-gray-800 border-b pb-2">Product Info</div>
-                            <input type="text" id="productFor" placeholder="Product For (Buyer 1, Buyer 2...)" class="input-field" required>
-                            <input type="text" id="productName" placeholder="Product Name (e.g., Oppo K13x)" class="input-field" required>
-                            <input type="text" id="productVariant" placeholder="Product Variant (e.g., 6/128)" class="input-field" required>
-                            <input type="url" id="imageUrl" placeholder="Product Image URL" class="input-field md:col-span-2" required>
-                            <input type="url" id="productLink" placeholder="Product Link (Amazon, Flipkart, etc.)" class="input-field md:col-span-2" required>
-                            
-                            <!-- Financials -->
-                            <div class="md:col-span-2 text-lg font-semibold text-gray-800 border-b pb-2 mt-4">Financials</div>
-                            <input type="number" id="bookingAmount" placeholder="Product Booking Amount" class="input-field" required>
-                            <input type="number" id="commission" placeholder="Commission" class="input-field" required>
-                            <input type="number" id="returnAmount" placeholder="Return Amount" class="input-field" required>
-                            <input type="number" id="quantityNeeded" placeholder="Quantity Needed" class="input-field" required>
+    // --- HELPER FUNCTIONS ---
 
-                            <!-- Address Info -->
-                            <div class="md:col-span-2 text-lg font-semibold text-gray-800 border-b pb-2 mt-4">Address Info</div>
-                            <input type="text" id="code" placeholder="Code (e.g., your name + hrh)" class="input-field" required>
-                            <input type="text" id="addressHouse" placeholder="House/Flat/Apartment No" class="input-field" required>
-                            <input type="text" id="addressArea" placeholder="Area/Locality" class="input-field" required>
-                            <input type="text" id="addressLandmark" placeholder="Landmark" class="input-field">
-                            <input type="text" id="addressPincode" placeholder="Pincode" class="input-field" required>
+    const showPage = (pageId) => {
+        Object.values(pages).forEach(page => page.classList.add('hidden'));
+        if (pages[pageId]) {
+            pages[pageId].classList.remove('hidden');
+        }
+    };
 
-                            <!-- Submit -->
-                            <div class="md:col-span-2 mt-4">
-                                <button type="submit" class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                                    Submit Deal
-                                </button>
-                                <p id="add-deal-message" class="text-center mt-4"></p>
-                            </div>
-                        </form>
-                    </div>
+    const showModal = (modalId) => {
+        // --- MODIFIED --- Added new modals
+        const modal = document.getElementById(modalId); // Use ID directly
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    };
 
-                    <!-- View Orders Tab Content -->
-                    <div id="content-view-orders" class="tab-content hidden mt-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-xl font-semibold">Received Orders</h3>
-                            <!-- Filter -->
-                            <div class="flex items-center space-x-2">
-                                <label for="order-filter" class="text-sm font-medium text-gray-700">Filter by:</label>
-                                <select id="order-filter" class="rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                                    <option>All</option>
-                                    <!-- Options will be populated by JS (e.g., Buyer 1, Buyer 2) -->
-                                </select>
-                                <select id="order-status-filter" class="rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                                <option value="All">All Status</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Delivered">Delivered</option>
-                                </select>
-                                <button id="refresh-orders-btn" class="p-2 bg-indigo-100 text-indigo-600 rounded-md hover:bg-indigo-200">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101A7.002 7.002 0 0112 4c2.52 0 4.735 1.116 6.134 2.866a1 1 0 11-1.554 1.268A5.002 5.002 0 0012 6c-2.023 0-3.744 1.178-4.57 2.825A1 1 0 016.99 9H10a1 1 0 110 2H5a1 1 0 01-1-1V4a1 1 0 011-1zm10 15a1 1 0 01-1-1v-2.101A7.002 7.002 0 018 16c-2.52 0-4.735-1.116-6.134-2.866a1 1 0 111.554-1.268A5.002 5.002 0 008 14c2.023 0 3.744-1.178 4.57 2.825a1 1 0 01.437.175H10a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 01-1 1z" clip-rule="evenodd" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
+    // Make closeModal global so inline HTML can access it
+    window.closeModal = (modalId) => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    };
+    
+    const showMessage = (title, body) => {
+        messageTitle.textContent = title;
+        messageBody.textContent = body;
+        showModal('message-modal'); // Use ID
+    };
 
-                        <!-- Orders Loading Spinner -->
-                        <div id="orders-loader" class="flex justify-center items-center h-64">
-                            <div class="spinner"></div>
-                        </div>
-                        
-                        <!-- Orders Container -->
-                        <div id="orders-container" class="space-y-4">
-                            <!-- Order items will be inserted here by JavaScript -->
-                        </div>
-                    </div>
+    const switchAdminTab = (tabId) => {
+        // --- MODIFIED --- Added 'manageUsers'
+        Object.values(adminTabs).forEach(tab => {
+            if (tab) { // Add check in case a tab is missing
+                tab.classList.remove('border-indigo-500', 'text-indigo-600');
+                tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            }
+        });
+        Object.values(adminContents).forEach(content => {
+            if (content) {
+                content.classList.add('hidden');
+            }
+        });
 
-                    <!-- View Deals Tab Content -->
-                    <div id="content-view-deals" class="tab-content hidden mt-6">
-                        <h3 class="text-xl font-semibold mb-4">Available Deals</h3>
-                        <p class="text-sm text-gray-500 mb-4">Click "Copy to Form" to load a deal's data into the "Add Deal" form for modification or re-listing.</p>
-                        
-                        <!-- Deals Loading Spinner -->
-                        <div id="admin-deals-loader" class="flex justify-center items-center h-64">
-                            <div class="spinner"></div>
-                        </div>
-                        
-                        <!-- Deals Container -->
-                        <div id="admin-deals-container" class="space-y-4">
-                            <!-- Deal items will be inserted here by JavaScript -->
-                        </div>
-                    </div>
+        if(adminTabs[tabId] && adminContents[tabId]) {
+            adminTabs[tabId].classList.add('border-indigo-500', 'text-indigo-600');
+            adminTabs[tabId].classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+            adminContents[tabId].classList.remove('hidden');
+        }
+    };
 
-                    <div id="content-manage-users" class="tab-content hidden mt-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <!-- Part 1: Add User Form -->
-                            <div>
-                                <h3 class="text-xl font-semibold mb-4">Add New User</h3>
-                                <form id="add-user-form" class="space-y-4">
-                                    <input type="text" id="newUserId" placeholder="New UserID (e.g., user123)" class="input-field" required>
-                                    <input type="text" id="newUserName" placeholder="User's Full Name" class="input-field" required>
-                                    <input type="password" id="newUserPassword" placeholder="New Password" class="input-field" required>
-                                    <button type="submit" class="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                                        Add User
-                                    </button>
-                                    <p id="add-user-message" class="text-center mt-2"></p>
-                                </form>
-                                </div>
+    const showSubmitLoading = (btn, isLoading) => {
+        const text = btn.querySelector('.submit-text');
+        const spinner = btn.querySelector('.submit-spinner');
+        if (isLoading) {
+            btn.disabled = true;
+            if (text) text.classList.add('hidden');
+            if (spinner) spinner.classList.remove('hidden');
+        } else {
+            btn.disabled = false;
+            if (text) text.classList.remove('hidden');
+            if (spinner) spinner.classList.add('hidden');
+        }
+    };
+    
+    const formatISODate = (isoString) => {
+        if (!isoString) return 'N/A';
+        try {
+            return isoString.split('T')[0];
+        } catch (e) {
+            return isoString;
+        }
+    };
 
-                            <!-- Part 2: Existing Users List -->
-                            <div>
-                                <h3 class="text-xl font-semibold mb-4">Existing Users</h3>
+    // --- NEW: User Session Helpers ---
+    const saveUserSession = (user) => {
+        currentUser = user;
+        sessionStorage.setItem('currentUser', JSON.stringify(user));
+        updateHeaderUI();
+    };
 
-                                    <div id="users-list-loader" class="flex justify-center items-center h-48 hidden">
-                                        <div class="spinner"></div>
-                                    </div>
+    const clearUserSession = () => {
+        currentUser = null;
+        sessionStorage.removeItem('currentUser');
+        updateHeaderUI();
+    };
 
-                                    <div id="users-list-container" class="space-y-3 h-64 overflow-y-auto">
-                                    <!-- User list will be populated by JS -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+const updateHeaderUI = () => {
+        // This function checks if elements exist before changing them
+        const safeSet = (el, display) => {
+            if (el) el.style.display = display;
+        };
 
-                </div>
-            </section>
+        if (adminToken) { 
+            // ADMIN IS LOGGED IN
+            safeSet(userAuthLinks, 'none'); // Hide User links
+            safeSet(headerSeparator, 'none'); // Hide Separator
+            
+            // Show Admin link (but point it to the panel)
+            if (adminLoginLink) {
+                adminLoginLink.href = '#admin-panel';
+                adminLoginLink.textContent = 'Admin Panel';
+            	adminLoginLink.style.display = 'inline-block';
+            }
+        } else if (currentUser) { 
+            // USER IS LOGGED IN
+            safeSet(userLoginButton, 'none');
+            safeSet(userDashboardButton, 'flex');
+            safeSet(userAuthLinks, 'block'); 
+            safeSet(adminLoginLink, 'none');
+            safeSet(headerSeparator, 'none');
+        } else {
+            // EVERYONE IS LOGGED OUT
+            safeSet(userLoginButton, 'inline-block');
+            safeSet(userDashboardButton, 'none');
+            safeSet(userAuthLinks, 'block');
+            
+            // Show Admin link (point to login)
+            if (adminLoginLink) {
+                adminLoginLink.href = '#admin-login';
+                adminLoginLink.textContent = 'Admin Panel';
+                adminLoginLink.style.display = 'inline-block';
+            }
+            safeSet(headerSeparator, 'inline-block');
+        }
+    };
+    // --- END NEW ---
 
-<!-- === ADD THIS NEW PAGE === -->
-            <section id="user-dashboard-page" class="hidden">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-extrabold text-gray-900">My Bookings</h2>
-                    <span id="user-welcome-message" class="text-lg text-gray-700"></span>
+    // --- API CALLS ---
+
+    const loadDeals = async () => {
+        // ... (This function is unchanged)
+        dealsLoader.classList.remove('hidden');
+        dealsGrid.innerHTML = '';
+        noDealsMessage.classList.add('hidden');
+        
+        try {
+            const response = await fetch(SCRIPT_URL + '?action=getDeals');
+            const result = await response.json();
+            
+            if (result.status === 'success' && result.deals.length > 0) {
+                currentDeals = result.deals;
+                uniqueBuyers.clear();
+                renderDeals(currentDeals);
+                currentDeals.forEach(deal => uniqueBuyers.add(deal.ProductFor));
+                populateOrderFilter();
+            } else {
+                noDealsMessage.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error loading deals:', error);
+            noDealsMessage.textContent = 'Failed to load deals. Please refresh the page.';
+            noDealsMessage.classList.remove('hidden');
+        } finally {
+            dealsLoader.classList.add('hidden');
+        }
+    };
+
+    const handleAdminLogin = async (e) => {
+        // ... (This function is unchanged)
+        e.preventDefault();
+        loginError.textContent = '';
+        const username = loginForm.querySelector('#username').value;
+        const password = loginForm.querySelector('#password').value;
+        const loginButton = loginForm.querySelector('button[type="submit"]');
+
+        loginButton.disabled = true;
+        loginButton.textContent = 'Logging...';
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'adminLogin', username, password }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                adminToken = result.token;
+                sessionStorage.setItem('adminToken', adminToken);
+                window.location.hash = '#admin-panel';
+                loginForm.reset();
+                updateHeaderUI(); // <-- ADD THIS LINE
+            } else {
+                loginError.textContent = result.message || 'Login failed.';
+            }
+        } catch (error) {
+            loginError.textContent = 'An error occurred. Please try again.';
+        } finally {
+            loginButton.disabled = false;
+            loginButton.textContent = 'Login';
+        }
+    };
+
+    const handleAddDeal = async (e) => {
+        // ... (This function is unchanged)
+        e.preventDefault();
+        if (!adminToken) return;
+        
+        addDealMessage.textContent = 'Adding deal...';
+        addDealMessage.classList.remove('text-red-500');
+        addDealMessage.classList.add('text-blue-500');
+
+        const deal = {
+            productFor: document.getElementById('productFor').value,
+            productName: document.getElementById('productName').value,
+            productVariant: document.getElementById('productVariant').value,
+            imageUrl: document.getElementById('imageUrl').value,
+            productLink: document.getElementById('productLink').value,
+            bookingAmount: document.getElementById('bookingAmount').value,
+            commission: document.getElementById('commission').value,
+            returnAmount: document.getElementById('returnAmount').value,
+            quantityNeeded: document.getElementById('quantityNeeded').value,
+            code: document.getElementById('code').value,
+            addressHouse: document.getElementById('addressHouse').value,
+            addressArea: document.getElementById('addressArea').value,
+            addressLandmark: document.getElementById('addressLandmark').value,
+            addressPincode: document.getElementById('addressPincode').value,
+        };
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'addDeal', token: adminToken, deal }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                addDealMessage.textContent = 'Deal added successfully!';
+                addDealMessage.classList.remove('text-blue-500');
+                addDealMessage.classList.add('text-green-500');
+                addDealForm.reset();
+                loadDeals();
+            } else {
+                addDealMessage.textContent = result.message || 'Failed to add deal.';
+                addDealMessage.classList.add('text-red-500');
+            }
+        } catch (error) {
+            addDealMessage.textContent = 'An error occurred.';
+            addDealMessage.classList.add('text-red-500');
+        }
+    };
+
+    const loadOrders = async () => {
+        // ... (This function is unchanged)
+        if (!adminToken) return;
+
+        ordersLoader.classList.remove('hidden');
+        ordersContainer.innerHTML = '';
+        const buyerFilter = orderFilter.value;
+        const statusFilter = orderStatusFilter.value;
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getOrders', token: adminToken, buyerFilter, statusFilter }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                renderOrders(result.orders);
+            } else {
+                ordersContainer.innerHTML = `<p class="text-red-500">${result.message}</p>`;
+            }
+        } catch (error) {
+            ordersContainer.innerHTML = `<p class="text-red-500">Failed to load orders.</p>`;
+        } finally {
+            ordersLoader.classList.add('hidden');
+        }
+    };
+
+    const loadAdminDeals = async () => {
+        // ... (This function is unchanged)
+        adminDealsLoader.classList.remove('hidden');
+        adminDealsContainer.innerHTML = '';
+        
+        if (currentDeals.length > 0) {
+            renderAdminDeals(currentDeals);
+            adminDealsLoader.classList.add('hidden');
+        } else {
+            try {
+                const response = await fetch(SCRIPT_URL + '?action=getDeals');
+                const result = await response.json();
+                
+                if (result.status === 'success' && result.deals.length > 0) {
+                    renderAdminDeals(result.deals);
+                } else {
+                    adminDealsContainer.innerHTML = '<p class="text-gray-500">No deals found.</p>';
+                }
+            } catch (error) {
+                adminDealsContainer.innerHTML = '<p class="text-red-500">Failed to load deals.</p>';
+            } finally {
+                adminDealsLoader.classList.add('hidden');
+            }
+        }
+    };
+
+    const handleMarkDelivered = async (orderId, btn) => {
+        // ... (This function is unchanged)
+        if (!adminToken) return;
+        
+        btn.disabled = true;
+        btn.textContent = 'Marking...';
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'markDelivered', token: adminToken, orderId }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                btn.textContent = 'Delivered';
+                btn.classList.replace('bg-green-500', 'bg-gray-400');
+                btn.classList.replace('hover:bg-green-600', 'disabled:bg-gray-400');
+                const statusBadge = btn.closest('.order-card').querySelector('.order-status');
+                if (statusBadge) {
+                    statusBadge.textContent = 'Delivered';
+                    statusBadge.classList.replace('bg-yellow-100', 'bg-green-100');
+                    statusBadge.classList.replace('text-yellow-800', 'text-green-800');
+                }
+            } else {
+                showMessage('Error', `Failed to mark as delivered: ${result.message}`); // Use showMessage
+                btn.disabled = false;
+                btn.textContent = 'Mark Delivered';
+            }
+        } catch (error) {
+            showMessage('Error', 'An error occurred.'); // Use showMessage
+            btn.disabled = false;
+            btn.textContent = 'Mark Delivered';
+        }
+    };
+
+    const handleBookingSubmit = async (e) => {
+        // --- MODIFIED --- Added UserID
+        e.preventDefault();
+        bookingError.textContent = '';
+        showSubmitLoading(submitBookingBtn, true);
+        
+        if (bookingTimerInterval) {
+            clearInterval(bookingTimerInterval);
+            bookingTimerInterval = null;
+        }
+
+        const bookingData = {
+            productId: bookingProductId.value,
+            userName: document.getElementById('userName').value,
+            userMobile: document.getElementById('userMobile').value,
+            userDeliveryDate: document.getElementById('userDeliveryDate').value,
+            userUpiId: document.getElementById('userUpiId').value,
+            userId: currentUser ? currentUser.userId : null, // --- NEW ---
+        };
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'submitOrder', ...bookingData }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                closeModal('booking-form-modal');
+                showMessage('Success!', 'Your deal has been booked successfully. You will receive your commission after the return period.');
+                loadDeals();
+            } else {
+                bookingError.textContent = result.message || 'Booking failed. Please try again.';
+                if (result.message.includes('out of stock')) {
+                    setTimeout(() => {
+                        closeModal('booking-form-modal');
+                        loadDeals();
+                    }, 2000);
+                }
+            }
+        } catch (error) {
+            bookingError.textContent = 'An error occurred. Please try again.';
+        } finally {
+            showSubmitLoading(submitBookingBtn, false);
+        }
+    };
+
+    // --- NEW: API Calls for User and Admin-User-Management ---
+
+    /**
+     * --- NEW ---
+     * Handles user login request.
+     */
+    const handleUserLogin = async (e) => {
+        e.preventDefault();
+        userLoginError.textContent = '';
+        showSubmitLoading(userLoginSubmitBtn, true);
+
+        const userId = userLoginForm.querySelector('#loginUserId').value;
+        const password = userLoginForm.querySelector('#loginPassword').value;
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'userLogin', userId, password }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                saveUserSession(result.user);
+                closeModal('user-login-modal');
+                userLoginForm.reset();
+                // If they were trying to book, they can now continue.
+                // Otherwise, they are just logged in.
+            } else {
+                userLoginError.textContent = result.message || 'Login failed.';
+            }
+        } catch (error) {
+            userLoginError.textContent = 'An error occurred. Please try again.';
+        } finally {
+            showSubmitLoading(userLoginSubmitBtn, false);
+        }
+    };
+
+    /**
+     * --- NEW ---
+     * Fetches orders for the currently logged-in user.
+     */
+    const loadUserOrders = async () => {
+        if (!currentUser) return;
+
+        userOrdersLoader.classList.remove('hidden');
+        userOrdersContainer.innerHTML = '';
+        userWelcomeMessage.textContent = `Welcome, ${currentUser.userName}!`;
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getUserOrders', userId: currentUser.userId }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                renderUserOrders(result.orders); // Use a new render function
+            } else {
+                userOrdersContainer.innerHTML = `<p class="text-red-500">${result.message}</p>`;
+            }
+        } catch (error) {
+            userOrdersContainer.innerHTML = `<p class="text-red-500">Failed to load your orders.</p>`;
+        } finally {
+            userOrdersLoader.classList.add('hidden');
+        }
+    };
+
+    /**
+     * --- NEW ---
+     * (Admin) Handles adding a new user.
+     */
+    const handleAddUser = async (e) => {
+        e.preventDefault();
+        if (!adminToken) return;
+
+        addUserMessage.textContent = 'Adding user...';
+        addUserMessage.classList.remove('text-red-500', 'text-green-500');
+        addUserMessage.classList.add('text-blue-500');
+
+        const user = {
+            userId: document.getElementById('newUserId').value,
+            userName: document.getElementById('newUserName').value,
+            password: document.getElementById('newUserPassword').value,
+        };
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'addUser', token: adminToken, user }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                addUserMessage.textContent = 'User added successfully!';
+                addUserMessage.classList.add('text-green-500');
+                addUserForm.reset();
+                loadUsers(); // Refresh the list
+            } else {
+                addUserMessage.textContent = result.message || 'Failed to add user.';
+                addUserMessage.classList.add('text-red-500');
+            }
+        } catch (error) {
+            addUserMessage.textContent = 'An error occurred.';
+            addUserMessage.classList.add('text-red-500');
+        }
+    };
+
+    /**
+     * --- NEW ---
+     * (Admin) Fetches and displays the list of users.
+     */
+    const loadUsers = async () => {
+        if (!adminToken) return;
+        
+        usersListLoader.classList.remove('hidden');
+        usersListContainer.innerHTML = '';
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getUsers', token: adminToken }),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                renderUsers(result.users);
+            } else {
+                usersListContainer.innerHTML = `<p class="text-red-500">${result.message}</p>`;
+            }
+        } catch (error) {
+            usersListContainer.innerHTML = `<p class="text-red-500">Failed to load users.</p>`;
+        } finally {
+            usersListLoader.classList.add('hidden');
+        }
+    };
+
+    // --- RENDER FUNCTIONS ---
+
+    const renderDeals = (deals) => {
+        // ... (This function is unchanged)
+        dealsGrid.innerHTML = '';
+        deals.forEach(deal => {
+            const card = document.createElement('div');
+            card.className = 'group bg-white shadow-xl rounded-xl overflow-hidden transition-all duration-300';
+            card.innerHTML = `
+                <div class="h-56 w-full overflow-hidden bg-gray-200">
+                    <img class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-110" src="${deal.ImageUrl}" alt="${deal.ProductName}" onerror="this.src='https://placehold.co/600x400/e2e8f0/94a3b8?text=Image+Not+Found';">
                 </div>
+<div class="p-6 flex flex-col flex-grow">
+    <h3 class="text-xl font-semibold mb-2 truncate" title="${deal.ProductName}">${deal.ProductName}</h3>
+    <div class="flex justify-between items-baseline mb-4 mt-auto"> <!-- mt-auto pushes it to bottom --><span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full whitespace-nowrap mr-2">
+            Commission: ₹${deal.Commission}
+        </span>
+        <span class="text-lg font-bold text-indigo-600 whitespace-nowrap flex-shrink-0">
+            ${deal.QuantityLeft} Left
+        </span>
+    </div>
+    <button class="show-deal-btn w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+        Show Deal
+    </button>
+</div>
+            `;
+            card.querySelector('.show-deal-btn').addEventListener('click', () => showDealDetail(deal.ProductID));
+            dealsGrid.appendChild(card);
+        });
+    };
 
-                <div class="bg-white rounded-xl shadow-xl p-6">
+    const renderOrders = (orders) => {
+        // ... (This function is unchanged, but we add UserID)
+        ordersContainer.innerHTML = '';
+        if (orders.length === 0) {
+            ordersContainer.innerHTML = '<p class="text-gray-500 text-center">No orders found for this filter.</p>';
+            return;
+        }
 
-                    <!-- Orders Loading Spinner -->
-                    <div id="user-orders-loader" class="flex justify-center items-center h-64">
-                        <div class="spinner"></div>
-                    </div>
-                    
-                    <!-- Orders Container -->
-                    <div id="user-orders-container" class="space-y-4">
-                        <!-- User's order items will be inserted here by JavaScript -->
+        orders.forEach(order => {
+            const isDelivered = order.Status === 'Delivered';
+            const card = document.createElement('div');
+            card.className = 'order-card bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-semibold text-indigo-700">${order.ProductFor} - ${order.ProductName}</p>
+                        <p class="text-xs text-gray-500">Order ID: ${order.OrderID}</p>
+                        <p class="text-xs text-gray-500">Placed: ${order.OrderTimestamp}</p> 
+                        <p class="text-xs text-gray-600 font-medium">User: ${order.UserID || 'N/A'}</p>
                     </div>
+                    <span class="order-status inline-block ${isDelivered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs font-medium px-2.5 py-0.5 rounded-full">${order.Status}</span>
                 </div>
-            </section>
-<!-- === END OF NEW PAGE === -->
-
-        </main>
-    </div>
-
-    <!-- === MODALS === -->
-
-    <!-- Deal Detail Modal -->
-    <div id="deal-detail-modal" class="modal hidden">
-        <div class="modal-bg" onclick="closeModal('deal-detail-modal')"></div>
-        <div class="modal-content p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-bold text-gray-900" id="detail-product-name">Product Name</h3>
-                <button onclick="closeModal('deal-detail-modal')" class="text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="space-y-4">
-                <!-- Purchase Link Button -->
-                <a id="detail-product-link" href="#" target="_blank" class="block w-full text-center bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-lg">
-                    Direct link to book
-                </a>
-
-                <!-- Details List -->
-                <div class="border-t border-b border-gray-200 divide-y divide-gray-200">
-                    <div class="py-3 flex justify-between text-sm"><span class="font-medium text-gray-500">Variant</span><span class="font-semibold text-gray-900" id="detail-product-variant"></span></div>
-                    <div class="py-3 flex justify-between text-sm"><span class="font-medium text-gray-500">Booking Amount</span><span class="font-semibold text-gray-900" id="detail-booking-amount"></span></div>
-                    <div class="py-3 flex justify-between text-sm"><span class="font-medium text-gray-500">Commission</span><span class="font-semibold text-green-600" id="detail-commission"></span></div>
-                    <div class="py-3 flex justify-between text-sm"><span class="font-medium text-gray-500">Return Amount</span><span class="font-semibold text-gray-900" id="detail-return-amount"></span></div>
-                </div>
-
-                <!-- Address Details -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h4 class="font-semibold text-gray-800 mb-2">Delivery Address to Use:</h4>
-                    <address class="not-italic text-sm text-gray-700 space-y-1">
-                        <p><strong>Code:</strong> <span id="detail-address-code"></span></p>
-                        <p id="detail-address-house"></p>
-                        <p id="detail-address-area"></p>
-                        <p id="detail-address-landmark"></p>
-                        <p id="detail-address-pincode"></p>
-                    </address>
-                </div>
-                
-                <!-- Confirm Button -->
-                <button id="confirm-deal-button" class="w-full bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-lg">
-                    Confirm Deal
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Booking Form Modal -->
-    <div id="booking-form-modal" class="modal hidden">
-        <div class="modal-bg"></div> <!-- No close on this one -->
-        <div class="modal-content p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-bold text-gray-900">Confirm Your Booking</h3>
-                <div class="text-lg font-bold text-red-600" id="booking-timer">10:00</div>
-            </div>
-            
-            <p class="text-sm text-gray-600 mb-4">
-                Please submit your details within 10 minutes to secure your deal.
-            </p>
-
-            <form id="booking-form">
-                <input type="hidden" id="booking-product-id">
-                <div class="space-y-4">
-                    <input type="text" id="userName" placeholder="Name Given on Address" class="input-field" required>
-                    <input type="tel" id="userMobile" placeholder="Mobile Number Given on Address" class="input-field" required>
-                    <input type="text" id="userDeliveryDate" placeholder="Expected Delivery Date (e.g., 01/10/2025)" class="input-field" onfocus="(this.type='date')" onblur="(this.type='text')" required>
-                    <input type="text" id="userUpiId" placeholder="Your UPI ID (for commission)" class="input-field" required>
-                    
-                    <p id="booking-error" class="text-red-500 text-sm text-center"></p>
-
-                    <div class="flex gap-4">
-                        <button type="button" id="cancel-booking-btn" class="w-1/3 bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-300">
-                            Cancel
-                        </button>
-                        <button type="submit" id="submit-booking-btn" class="w-2/3 bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                            <span class="submit-text">Submit Booking</span>
-                            <span class="submit-spinner hidden"><div class="spinner !w-6 !h-6 border-white/30 border-l-white mx-auto"></div></span>
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Simple Message Modal (for success/error) -->
-    <div id="message-modal" class="modal hidden">
-        <div class="modal-bg" onclick="closeModal('message-modal')"></div>
-        <div class="modal-content p-8 text-center">
-            <h3 id="message-title" class="text-2xl font-bold mb-4"></h3>
-            <p id="message-body" class="text-gray-600 mb-6"></p>
-            <button id="message-modal-close-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700">
-                Close
-            </button>
-        </div>
-    </div>
-
-<!-- === ADD THESE 2 NEW MODALS === -->
-    <div id="user-login-modal" class="modal hidden">
-        <div class="modal-bg" onclick="closeModal('user-login-modal')"></div>
-        <div class="modal-content p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-900">User Login</h3>
-                    <button onclick="closeModal('user-login-modal')" class="text-gray-400 hover:text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-            <form id="user-login-form">
-                <div class="space-y-4">
-                    <input type="text" id="loginUserId" placeholder="Enter your UserID" class="input-field" required>
-                       <input type="password" id="loginPassword" placeholder="Enter your Password" class="input-field" required>
-                    <button type="submit" id="user-login-submit-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                        <span class="submit-text">Login</span>
-                        <span class="submit-spinner hidden"><div class="spinner !w-6 !h-6 border-white/30 border-l-white mx-auto"></div></span>
-                    </button>
-                     <p id="user-login-error" class="text-red-500 text-sm text-center"></p>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div><strong>Name:</strong> ${order.UserName}</div>
+                    <div><strong>Mobile:</strong> ${order.UserMobile}</div>
+                    <div><strong>Delivery:</strong> ${formatISODate(order.UserDeliveryDate)}</div>
+                    <div><strong>UPI:</strong> ${order.UserUpiId}</div>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="login-prompt-modal" class="modal hidden">
-.     <div class="modal-bg" onclick="closeModal('login-prompt-modal')"></div>
-        <div class="modal-content p-8 text-center">
-            <h3 class="text-2xl font-bold mb-4">Login Required</h3>
-            <p class="text-gray-600 mb-6">You must be logged in to book a deal.</p>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <button id="login-prompt-close-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
-                 Close
+                <button class="deliver-btn mt-4 ${isDelivered ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'} text-white text-sm font-semibold py-1 px-3 rounded-md disabled:bg-gray-400" ${isDelivered ? 'disabled' : ''}>
+                    ${isDelivered ? 'Delivered' : 'Mark as Delivered'}
                 </button>
-                <button id="login-prompt-login-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700">
-                    Login Now
+            `;
+            
+            if (!isDelivered) {
+                card.querySelector('.deliver-btn').addEventListener('click', (e) => handleMarkDelivered(order.OrderID, e.target));
+            }
+            ordersContainer.appendChild(card);
+        });
+    };
+
+    /**
+     * --- NEW ---
+     * Renders the orders list for the user dashboard.
+     */
+    const renderUserOrders = (orders) => {
+        userOrdersContainer.innerHTML = '';
+        if (orders.length === 0) {
+            userOrdersContainer.innerHTML = '<p class="text-gray-500 text-center">You have no bookings yet.</p>';
+            return;
+        }
+
+        orders.forEach(order => {
+            const isDelivered = order.Status === 'Delivered';
+            const card = document.createElement('div');
+            card.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-semibold text-indigo-700">${order.ProductFor} - ${order.ProductName}</p>
+                        <p class="text-xs text-gray-500">Order ID: ${order.OrderID}</p>
+                        <p class="text-xs text-gray-500">Placed: ${order.OrderTimestamp}</p>
+                    </div>
+                    <span class="order-status inline-block ${isDelivered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs font-medium px-2.5 py-0.5 rounded-full">${order.Status}</span>
+                </div>
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div><strong>Name:</strong> ${order.UserName}</div>
+                    <div><strong>Mobile:</strong> ${order.UserMobile}</div>
+                    <div><strong>Delivery:</strong> ${formatISODate(order.UserDeliveryDate)}</div>
+                    <div><strong>UPI:</strong> ${order.UserUpiId}</div>
+                </div>
+            `;
+            userOrdersContainer.appendChild(card);
+        });
+    };
+
+    const renderAdminDeals = (deals) => {
+        // ... (This function is unchanged)
+        adminDealsContainer.innerHTML = '';
+        if (deals.length === 0) {
+            adminDealsContainer.innerHTML = '<p class="text-gray-500 text-center">No available deals to show.</p>';
+            return;
+        }
+
+        deals.forEach(deal => {
+            const card = document.createElement('div');
+            card.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center';
+            card.innerHTML = `
+                <div>
+                    <p class="text-sm font-semibold text-indigo-700">${deal.ProductFor} - ${deal.ProductName} (${deal.ProductVariant})</p>
+                    <p class="text-xs text-gray-500">ID: ${deal.ProductID}</p>
+                    <p class="text-xs text-gray-500">Stock: ${deal.QuantityLeft} / ${deal.QuantityNeeded}</p>
+                </div>
+                <button class="copy-deal-btn bg-blue-500 text-white text-sm font-semibold py-1 px-3 rounded-md hover:bg-blue-600">
+                    Copy to Form
                 </button>
-            </div>
-        </div>
-    </div>
-    <!-- === END OF NEW MODALS === -->
+            `;
+            
+            card.querySelector('.copy-deal-btn').addEventListener('click', () => populateDealForm(deal.ProductID));
+            adminDealsContainer.appendChild(card);
+        });
+    };
 
-    <!-- Load your custom JavaScript -->
-    <script src="main.js" defer></script>
+    /**
+     * --- NEW ---
+     * (Admin) Renders the list of users.
+     */
+    const renderUsers = (users) => {
+        usersListContainer.innerHTML = '';
+        if (users.length === 0) {
+            usersListContainer.innerHTML = '<p class="text-gray-500 text-center">No users added yet.</p>';
+            return;
+        }
 
-</body>
-</html>
+        users.forEach(user => {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-3 rounded-md border border-gray-200';
+            card.innerHTML = `
+                <p class="font-semibold text-gray-800">${user.userName}</p>
+                <p class="text-sm text-gray-600">UserID: <span class="font-medium text-indigo-600">${user.userId}</span></p>
+            `;
+            usersListContainer.appendChild(card);
+        });
+    };
+
+    const populateOrderFilter = () => {
+        // ... (This function is unchanged)
+        const currentVal = orderFilter.value;
+        orderFilter.innerHTML = '<option>All</option>';
+        uniqueBuyers.forEach(buyer => {
+            const option = document.createElement('option');
+            option.value = buyer;
+            option.textContent = buyer;
+            orderFilter.appendChild(option);
+        });
+        orderFilter.value = currentVal;
+    };
+
+    // --- FLOW FUNCTIONS ---
+
+    const populateDealForm = (productId) => {
+        // ... (This function is unchanged)
+        const deal = currentDeals.find(d => d.ProductID === productId);
+        if (!deal) return;
+
+        document.getElementById('productFor').value = deal.ProductFor;
+        document.getElementById('productName').value = deal.ProductName;
+        document.getElementById('productVariant').value = deal.ProductVariant;
+        document.getElementById('imageUrl').value = deal.ImageUrl;
+        document.getElementById('productLink').value = deal.ProductLink;
+        document.getElementById('bookingAmount').value = deal.BookingAmount;
+        document.getElementById('commission').value = deal.Commission;
+        document.getElementById('returnAmount').value = deal.ReturnAmount;
+        document.getElementById('quantityNeeded').value = deal.QuantityNeeded;
+        document.getElementById('code').value = deal.Code;
+        document.getElementById('addressHouse').value = deal.AddressHouse;
+        document.getElementById('addressArea').value = deal.AddressArea;
+        document.getElementById('addressLandmark').value = deal.AddressLandmark;
+        document.getElementById('addressPincode').value = deal.AddressPincode;
+
+        switchAdminTab('addDeal');
+        
+        addDealMessage.textContent = 'Deal data copied. Modify as needed and click "Submit Deal" to create a new entry.';
+        addDealMessage.classList.remove('text-red-500', 'text-green-500');
+        addDealMessage.classList.add('text-blue-500');
+    };
+
+    const showDealDetail = (productId) => {
+        // ... (This function is unchanged)
+        const deal = currentDeals.find(d => d.ProductID === productId);
+        if (!deal) return;
+
+        detailProductName.textContent = deal.ProductName;
+        detailProductLink.href = deal.ProductLink;
+        detailProductVariant.textContent = deal.ProductVariant;
+        detailBookingAmount.textContent = `₹${deal.BookingAmount}`;
+        detailCommission.textContent = `₹${deal.Commission}`;
+        detailReturnAmount.textContent = `₹${deal.ReturnAmount}`;
+        detailAddressCode.textContent = deal.Code;
+        detailAddressHouse.textContent = deal.AddressHouse;
+        detailAddressArea.textContent = deal.AddressArea;
+        detailAddressLandmark.textContent = deal.AddressLandmark || 'N/A';
+        detailAddressPincode.textContent = deal.AddressPincode;
+
+        const newConfirmBtn = confirmDealButton.cloneNode(true);
+        newConfirmBtn.id = 'confirm-deal-button';
+        confirmDealButton.parentNode.replaceChild(newConfirmBtn, confirmDealButton);
+        confirmDealButton = newConfirmBtn;
+        confirmDealButton.addEventListener('click', () => showBookingForm(productId));
+
+        showModal('deal-detail-modal'); // Use ID
+    };
+
+    const showBookingForm = (productId) => {
+        // --- MODIFIED --- Added login check
+        if (!currentUser) {
+            showModal('login-prompt-modal'); // Use ID
+            return;
+        }
+        // --- End modification ---
+
+        closeModal('deal-detail-modal'); // Use ID
+        bookingForm.reset();
+        bookingError.textContent = '';
+        bookingProductId.value = productId;
+        
+        showModal('booking-form-modal'); // Use ID
+        startBookingTimer();
+    };
+
+    const startBookingTimer = () => {
+        // ... (This function is unchanged)
+        if (bookingTimerInterval) {
+            clearInterval(bookingTimerInterval);
+        }
+
+        let timeLeft = 600;
+        
+        const updateTimer = () => {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            bookingTimer.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(bookingTimerInterval);
+                bookingTimerInterval = null;
+                closeModal('booking-form-modal');
+                showMessage('Time Expired', 'The 10-minute booking window has closed. Please try again.');
+            }
+            timeLeft--;
+        };
+
+        updateTimer();
+        bookingTimerInterval = setInterval(updateTimer, 1000);
+    };
+
+    const handleHashChange = () => {
+        // --- MODIFIED --- Added user dashboard
+        const hash = window.location.hash;
+        if (hash === '#admin-panel' && adminToken) {
+            showPage('adminPanel');
+            switchAdminTab('addDeal');
+            loadOrders();
+        } else if (hash === '#admin-login') {
+            showPage('adminLogin');
+        } else if (hash === '#user-dashboard' && currentUser) {
+            showPage('userDashboard');
+            loadUserOrders();
+        } else {
+            showPage('deals');
+            // Only clear hash if it's not an admin hash
+            if (hash !== '#admin-panel' && hash !== '#admin-login') {
+                window.location.hash = '';
+            }
+        }
+    };
+    
+    // --- EVENT LISTENERS ---
+    
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // User Flow
+    bookingForm.addEventListener('submit', handleBookingSubmit);
+    cancelBookingBtn.addEventListener('click', () => {
+        if (bookingTimerInterval) {
+            clearInterval(bookingTimerInterval);
+            bookingTimerInterval = null;
+        }
+        closeModal('booking-form-modal');
+    });
+    
+    messageModalCloseBtn.addEventListener('click', () => closeModal('message-modal')); 
+
+    // --- NEW: User Auth Listeners ---
+    userLoginButton.addEventListener('click', () => showModal('user-login-modal'));
+    userLogoutButton.addEventListener('click', () => {
+        clearUserSession();
+        window.location.hash = '#'; // Go to home page
+        showPage('deals'); // Ensure deals page is shown
+    });
+    userLoginForm.addEventListener('submit', handleUserLogin);
+    loginPromptCloseBtn.addEventListener('click', () => closeModal('login-prompt-modal'));
+    loginPromptLoginBtn.addEventListener('click', () => {
+        closeModal('login-prompt-modal');
+        showModal('user-login-modal');
+    });
+
+    // Admin Flow
+    loginForm.addEventListener('submit', handleAdminLogin);
+    logoutButton.addEventListener('click', () => {
+        adminToken = null;
+        sessionStorage.removeItem('adminToken');
+        window.location.hash = '#';
+        updateHeaderUI(); // <-- ADD THIS LINE
+    });
+    
+    // Admin Tabs
+    adminTabs.addDeal.addEventListener('click', () => switchAdminTab('addDeal'));
+    adminTabs.viewOrders.addEventListener('click', () => {
+        switchAdminTab('viewOrders');
+        loadOrders();
+    });
+    adminTabs.viewDeals.addEventListener('click', () => {
+        switchAdminTab('viewDeals');
+        loadAdminDeals();
+    });
+    // --- NEW ---
+    adminTabs.manageUsers.addEventListener('click', () => {
+        switchAdminTab('manageUsers');
+        loadUsers();
+    });
+    addUserForm.addEventListener('submit', handleAddUser);
+
+
+    addDealForm.addEventListener('submit', handleAddDeal);
+    
+    // Admin Orders
+    orderFilter.addEventListener('change', loadOrders);
+    if (orderStatusFilter) {
+        orderStatusFilter.addEventListener('change', loadOrders);
+    }
+    refreshOrdersBtn.addEventListener('click', () => {
+        orderFilter.value = 'All';
+        orderStatusFilter.value = 'All';
+        loadOrders();
+    });
+
+
+    // --- INITIALIZATION ---
+    updateHeaderUI(); // --- NEW --- Set initial UI state for user
+    loadDeals();
+    handleHashChange();
+});
