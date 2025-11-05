@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DealsBooker - Exclusive Offers</title>
+    <title>DealBooker - Exclusive Offers</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Inter font for Tailwind -->
@@ -16,9 +16,9 @@
     <div id="app">
         <!-- Header -->
 <!-- === NEW, CORRECTED HEADER === -->
-<header class="bg-white shadow-md">
+<!-- === NEW RESPONSIVE HEADER === -->
+<header class="bg-white shadow-md sticky top-0 z-40">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- This div correctly aligns Logo (left) and Links (right) -->
         <div class="flex justify-between items-center h-16">
             
             <!-- Logo -->
@@ -26,10 +26,9 @@
                 <a href="#" class="text-2xl font-bold text-indigo-600">DealBooker</a>
             </div>
 
-            <!-- Right-side Links Container -->
-            <div class="flex items-center space-x-4">
-                
-                <!-- User Auth Links (will be controlled by JS) -->
+            <!-- Desktop Links (Hidden on mobile) -->
+            <div class="hidden md:flex items-center space-x-4">
+                <!-- User Auth Links -->
                 <div id="user-auth-links">
                     <button id="user-login-button" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
                         User Login
@@ -45,17 +44,47 @@
                 </div>
                 
                 <!-- Separator -->
-                <span class="text-gray-300">|</span>
+                <span id="header-separator" class="text-gray-300">|</span>
 
                 <!-- Admin Panel Link -->
-                <a href="#admin-login" class="text-sm font-medium text-gray-500 hover:text-indigo-600">
+                <a href="#admin-login" id="admin-login-link" class="text-sm font-medium text-gray-500 hover:text-indigo-600">
                     Admin Panel
                 </a>
             </div>
 
+            <!-- Mobile Menu Toggler (Hidden on desktop) -->
+            <div class="md:hidden">
+                <button id="menu-toggler-button" class="text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </div>
+
         </div>
     </nav>
+
+    <!-- Mobile Menu (Hidden by default) -->
+    <div id="mobile-menu" class="hidden md:hidden shadow-lg">
+        <div id="mobile-user-auth-links" class="px-2 pt-2 pb-3 space-y-1">
+            <button id="mobile-user-login-button" class="mobile-menu-link">
+                User Login
+            </button>
+            <a href="#user-dashboard" id="mobile-user-dashboard-link" class="mobile-menu-link">
+                My Dashboard
+            </a>
+            <button id="mobile-user-logout-button" class="mobile-menu-link text-red-500">
+                Logout
+            </button>
+        </div>
+        <div class="border-t border-gray-200">
+            <a href="#admin-login" id="mobile-admin-login-link" class="mobile-menu-link">
+                Admin Panel
+            </a>
+        </div>
+    </div>
 </header>
+<!-- === END OF NEW RESPONSIVE HEADER === -->
 <!-- === END OF NEW HEADER === -->
 
         <!-- Main Content Area -->
@@ -406,7 +435,6 @@
         </div>
     </div>
     <!-- === END OF NEW MODALS === -->
-
     <!-- Load your custom JavaScript -->
     <script src="main.js" defer></script>
 
