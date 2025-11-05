@@ -43,6 +43,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const userLoginSubmitBtn = document.getElementById('user-login-submit-btn');
     const userLoginError = document.getElementById('user-login-error');
 
+// --- ADD THESE NEW SELECTORS ---
+    const menuTogglerButton = document.getElementById('menu-toggler-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileUserAuthLinks = document.getElementById('mobile-user-auth-links');
+    const mobileUserLoginButton = document.getElementById('mobile-user-login-button');
+    const mobileUserDashboardLink = document.getElementById('mobile-user-dashboard-link');
+    const mobileUserLogoutButton = document.getElementById('mobile-user-logout-button');
+    const mobileAdminLoginLink = document.getElementById('mobile-admin-login-link');
+    // --- END OF NEW SELECTORS ---
+
     // --- NEW: User Dashboard ---
     const userWelcomeMessage = document.getElementById('user-welcome-message');
     const userOrdersLoader = document.getElementById('user-orders-loader');
@@ -208,35 +218,58 @@ const updateHeaderUI = () => {
 
         if (adminToken) { 
             // ADMIN IS LOGGED IN
-            safeSet(userAuthLinks, 'none'); // Hide User links
-            safeSet(headerSeparator, 'none'); // Hide Separator
-            
-            // Show Admin link (but point it to the panel)
+            // --- Desktop ---
+            safeSet(userAuthLinks, 'none');
+            safeSet(headerSeparator, 'none');
             if (adminLoginLink) {
                 adminLoginLink.href = '#admin-panel';
                 adminLoginLink.textContent = 'Admin Panel';
             	adminLoginLink.style.display = 'inline-block';
             }
+            // --- Mobile ---
+            safeSet(mobileUserAuthLinks, 'none');
+            if (mobileAdminLoginLink) {
+                mobileAdminLoginLink.href = '#admin-panel';
+                mobileAdminLoginLink.textContent = 'Admin Panel';
+                mobileAdminLoginLink.style.display = 'block';
+            }
         } else if (currentUser) { 
             // USER IS LOGGED IN
+            // --- Desktop ---
             safeSet(userLoginButton, 'none');
             safeSet(userDashboardButton, 'flex');
             safeSet(userAuthLinks, 'block'); 
             safeSet(adminLoginLink, 'none');
             safeSet(headerSeparator, 'none');
+            // --- Mobile ---
+            safeSet(mobileUserLoginButton, 'none');
+            safeSet(mobileUserDashboardLink, 'block');
+            safeSet(mobileUserLogoutButton, 'block');
+            safeSet(mobileUserAuthLinks, 'block');
+            safeSet(mobileAdminLoginLink, 'none');
         } else {
             // EVERYONE IS LOGGED OUT
+            // --- Desktop ---
             safeSet(userLoginButton, 'inline-block');
             safeSet(userDashboardButton, 'none');
             safeSet(userAuthLinks, 'block');
-            
-            // Show Admin link (point to login)
             if (adminLoginLink) {
                 adminLoginLink.href = '#admin-login';
-                adminLoginLink.textContent = 'Admin Panel';
+                adminLoginLink.textContent = 'Admin Panel';
                 adminLoginLink.style.display = 'inline-block';
+          
             }
             safeSet(headerSeparator, 'inline-block');
+            // --- Mobile ---
+            safeSet(mobileUserLoginButton, 'block');
+            safeSet(mobileUserDashboardLink, 'none');
+            safeSet(mobileUserLogoutButton, 'none');
+            safeSet(mobileUserAuthLinks, 'block');
+            if (mobileAdminLoginLink) {
+                mobileAdminLoginLink.href = '#admin-login';
+                   mobileAdminLoginLink.textContent = 'Admin Panel';
+                mobileAdminLoginLink.style.display = 'block';
+            }
         }
     };
     // --- END NEW ---
@@ -928,6 +961,28 @@ const updateHeaderUI = () => {
     
     window.addEventListener('hashchange', handleHashChange);
     
+// --- NEW: Mobile Menu Toggler ---
+    if (menuTogglerButton) {
+        menuTogglerButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+
+    // --- NEW: Mobile Menu Link Listeners (to close menu on click) ---
+    const mobileLinks = [
+        mobileUserLoginButton, 
+        mobileUserDashboardLink, 
+        mobileUserLogoutButton, 
+        mobileAdminLoginLink
+    ];
+    mobileLinks.forEach(link => {
+        if (link) {
+            link.addEventListener('click', () => {
+            mobileMenu.classList.add('hidden');
+            });
+        }
+    });
+
     // User Flow
     bookingForm.addEventListener('submit', handleBookingSubmit);
     cancelBookingBtn.addEventListener('click', () => {
@@ -942,11 +997,29 @@ const updateHeaderUI = () => {
 
     // --- NEW: User Auth Listeners ---
     userLoginButton.addEventListener('click', () => showModal('user-login-modal'));
+
+// --- ADD THIS ---
+    if (mobileUserLoginButton) {
+        mobileUserLoginButton.addEventListener('click', () => showModal('user-login-modal'));
+    }
+    // --- END ADD ---
+
     userLogoutButton.addEventListener('click', () => {
         clearUserSession();
         window.location.hash = '#'; // Go to home page
         showPage('deals'); // Ensure deals page is shown
     });
+
+// --- ADD THIS ---
+    if (mobileUserLogoutButton) {
+        mobileUserLogoutButton.addEventListener('click', () => {
+            clearUserSession();
+            window.location.hash = '#'; 
+            showPage('deals');
+        });
+    }
+    // --- END ADD ---
+
     userLoginForm.addEventListener('submit', handleUserLogin);
     loginPromptCloseBtn.addEventListener('click', () => closeModal('login-prompt-modal'));
     loginPromptLoginBtn.addEventListener('click', () => {
@@ -993,6 +1066,7 @@ const updateHeaderUI = () => {
         orderStatusFilter.value = 'All';
         loadOrders();
     });
+
 
     // --- INITIALIZATION ---
     updateHeaderUI(); // --- NEW --- Set initial UI state for user
