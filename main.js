@@ -1,11 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0L6aAKFMk2Z5VEcuGWDJT-3qHCJxaITCN28Z3X3ySOD8dE5fCwwH3kQb5gXH5LAgE/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyfkOa4fffqHQqx0FAiSP4cwrKnIa-KGu4QAVIZjp0XwzFJEIvW8RNhLQZ3zzZ4c_d/exec"; // This is your last-used URL
     let adminToken = sessionStorage.getItem('adminToken');
     let currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     let currentDeals = [];
     let bookingTimerInterval = null;
     let uniqueBuyers = new Set();
+
+    // --- NEW: State to track who is using the delivery modal ---
+    let isUserMarkingDelivery = false; 
 
     // --- DOM SELECTORS ---
     const pages = {
@@ -191,14 +194,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    const formatISODate = (isoString) => {
-        if (!isoString) return 'N/A';
-        try {
-            return isoString.split('T')[0];
-        } catch (e) {
-            return isoString;
-        }
-    };
+const formatISODate = (dateInput) => {
+        if (!dateInput) return 'N/A';
+        try {
+            // Create a Date object. This works even if dateInput
+            // is a timestamp string or a date object from the sheet.
+            const date = new Date(dateInput);
+
+            // Get the parts of the date
+            const year = date.getFullYear();
+            // getMonth() is 0-indexed, so add 1. Pad with '0' if needed.
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            // getDate() is 1-indexed. Pad with '0' if needed.
+            const day = String(date.getDate()).padStart(2, '0');
+
+            // Return in YYYY-MM-DD format
+            return `${year}-${month}-${day}`;
+        } catch (e) {
+            // Failsafe in case the date is invalid
+            return String(dateInput).split('T')[0];
+        }
+    };
 
     // --- User Session Helpers ---
     const saveUserSession = (user) => {
@@ -458,9 +474,10 @@ document.addEventListener('DOMContentLoaded', () => {
      * --- NEW FUNCTION ---
      * Opens the delivery date modal and sets the hidden order ID.
      */
-    const openDeliveryDateModal = (orderId) => {
+        const openDeliveryDateModal = (orderId, isUser = false) => {
         deliveryOrderIdHidden.value = orderId;
-        deliveryDateInput.valueAsDate = new Date(); // --- Set to today's date ---
+        deliveryDateInput.valueAsDate = new Date();
+        isUserMarkingDelivery = isUser; // --- ADD THIS LINE to track who clicked
         showModal('delivery-date-modal');
     };
 
@@ -468,35 +485,60 @@ document.addEventListener('DOMContentLoaded', () => {
      * --- NEW FUNCTION ---
      * Handles the submission of the delivery date form.
      */
-    const handleDeliveryDateSubmit = async (e) => {
+
+        const handleDeliveryDateSubmit = async (e) => {
         e.preventDefault();
-        if (!adminToken) return;
+ 
+        // Security check: Must be admin OR user
+        if (!adminToken && !currentUser) return; 
 
         const orderId = deliveryOrderIdHidden.value;
         const deliveredDate = deliveryDateInput.value;
-        
+
         const btn = e.target.querySelector('button[type="submit"]');
         const originalBtnText = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = 'Saving...';
 
+        // --- NEW: Smart Payload Logic ---
+        let payload;
+        if (isUserMarkingDelivery) {
+        // If a USER is clicking, send the userMarkDelivered action
+        payload = { 
+        action: 'userMarkDelivered', 
+        userId: currentUser.userId, // Send user ID for security
+        orderId, 
+        deliveredDate 
+        };
+        } else {
+        // If an ADMIN is clicking, send the admin action
+            payload = { 
+                action: 'markDelivered', 
+                token: adminToken, // Send admin token for security
+                orderId, 
+                deliveredDate 
+            };
+        }
+        // --- END OF NEW LOGIC ---
+
         try {
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
-                body: JSON.stringify({ 
-                    action: 'markDelivered', 
-                    token: adminToken, 
-                    orderId, 
-                    deliveredDate 
-                }),
+                body: JSON.stringify(payload), // Send the new smart payload
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
             const result = await response.json();
 
             if (result.status === 'success') {
                 closeModal('delivery-date-modal');
-                showMessage('Success', 'Order marked as delivered.');
-                loadOrders(); // Refresh the orders list
+                showMessage('Success', result.message || 'Order updated!');
+
+                // --- NEW: Refresh the correct page ---
+                if (isUserMarkingDelivery) {
+                loadUserOrders(); // Refresh User Dashboard
+                } else {
+                    loadOrders(); // Refresh Admin Orders
+                }
             } else {
                 showMessage('Error', `Failed to update: ${result.message}`);
             }
@@ -505,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalBtnText;
+            isUserMarkingDelivery = false; // --- ADD THIS to reset the state ---
         }
     };
 
@@ -763,13 +806,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (!isDelivered) {
                 // --- NEW: This button now opens the modal ---
-                card.querySelector('.deliver-btn').addEventListener('click', () => openDeliveryDateModal(order.OrderID));
+                card.querySelector('.deliver-btn').addEventListener('click', () => openDeliveryDateModal(order.OrderID, false));
             }
             ordersContainer.appendChild(card);
         });
     };
 
-    const renderUserOrders = (orders) => {
+const renderUserOrders = (orders) => {
         userOrdersContainer.innerHTML = '';
         if (orders.length === 0) {
             userOrdersContainer.innerHTML = '<p class="text-gray-500 text-center">You have no bookings yet.</p>';
@@ -783,6 +826,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 `<p class="text-xs text-green-700 font-medium">Delivered: ${formatISODate(order.DeliveredDate) || 'N/A'}</p>` : 
                 '';
 
+            // --- ADD THIS NEW VARIABLE ---
+            const userDeliverButtonHtml = !isDelivered ?
+                `<div class="mt-2">
+                     <button class="user-deliver-btn bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold py-1 px-3 rounded-md">
+                        Mark as Received
+                </button>
+                 </div>` :
+                '';    
+
             const card = document.createElement('div');
             card.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
             card.innerHTML = `
@@ -795,19 +847,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="order-status inline-block ${isDelivered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs font-medium px-2.5 py-0.5 rounded-full">${order.Status}</span>
                 </div>
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <!-- Left Column -->
+                    <div class="space-y-2">
                     <div><strong>Name:</strong> ${order.UserName}</div>
-                    <div><strong>Mobile:</strong> ${order.UserMobile}</div>
                     <div><strong>Expected:</strong> ${formatISODate(order.UserDeliveryDate)}</div>
+                    ${isDelivered ? deliveredDateHtml : ''} <!-- Delivered date goes here -->
+                    </div>
+                    <!-- Right Column -->
+                    <div class="space-y-2">
+                    <div><strong>Mobile:</strong> ${order.UserMobile}</div>
                     <div><strong>UPI:</strong> ${order.UserUpiId}</div>
+                    ${!isDelivered ? userDeliverButtonHtml : ''} <!-- "Mark as Received" button goes here -->
                 </div>
-                <!-- NEW: Show delivery date in user dashboard -->
-                <div class="mt-4">
-                    ${deliveredDateHtml}
                 </div>
-            `;
+                            `;
+            // --- ADD THIS LISTENER ---
+                if (!isDelivered) {
+                card.querySelector('.user-deliver-btn').addEventListener('click', () => openDeliveryDateModal(order.OrderID, true));
+                }
+            // --- END ADD ---
+
+
             userOrdersContainer.appendChild(card);
         });
     };
+
 
     const renderAdminDeals = (deals) => {
         adminDealsContainer.innerHTML = '';
