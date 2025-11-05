@@ -211,6 +211,12 @@
                             </div>
                         </div>
 
+                        <!-- === ADD THIS NEW SEARCH BAR === -->
+                        <div class="mb-4">
+                            <input type="text" id="order-search-input" placeholder="Search by Order ID, Name, or Model..." class="input-field">
+                        </div>
+                        <!-- === END OF SEARCH BAR === -->
+                        
                         <!-- Orders Loading Spinner -->
                         <div id="orders-loader" class="flex justify-center items-center h-64">
                             <div class="spinner"></div>
@@ -434,7 +440,33 @@
             </div>
         </div>
     </div>
-    <!-- === END OF NEW MODALS === -->
+
+    <!-- === ADD THIS NEW MODAL === -->
+    <div id="delivery-date-modal" class="modal hidden">
+        <div class="modal-bg" onclick="closeModal('delivery-date-modal')"></div>
+        <div class="modal-content p-6">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Set Delivery Date</h3>
+            <form id="delivery-date-form">
+                <input type="hidden" id="delivery-order-id-hidden">
+                <div class="space-y-4">
+                    <p class="text-sm text-gray-600">Please select the date this order was delivered.</p>
+                    <input type="date" id="delivery-date-input" class="input-field" required>
+                    
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" onclick="closeModal('delivery-date-modal')" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700">
+                            Save Date
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- === END OF NEW MODAL === -->
+
+    <!-- === END OF NEW MODALS === -->
     <!-- Load your custom JavaScript -->
     <script src="main.js" defer></script>
 
