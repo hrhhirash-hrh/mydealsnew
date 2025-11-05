@@ -15,20 +15,48 @@
 
     <div id="app">
         <!-- Header -->
-        <header class="bg-white shadow-md">
-            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex-shrink-0">
-                        <a href="#" class="text-2xl font-bold text-indigo-600">DealBooker</a>
-                    </div>
-                    <div>
-                        <a href="#admin-login" class="text-sm font-medium text-gray-500 hover:text-indigo-600">
-                            Admin Panel
+<!-- === NEW, CORRECTED HEADER === -->
+<header class="bg-white shadow-md">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- This div correctly aligns Logo (left) and Links (right) -->
+        <div class="flex justify-between items-center h-16">
+            
+            <!-- Logo -->
+            <div class="flex-shrink-0">
+                <a href="#" class="text-2xl font-bold text-indigo-600">DealBooker</a>
+            </div>
+
+            <!-- Right-side Links Container -->
+            <div class="flex items-center space-x-4">
+                
+                <!-- User Auth Links (will be controlled by JS) -->
+                <div id="user-auth-links">
+                    <button id="user-login-button" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                        User Login
+                    </button>
+                    <div id="user-dashboard-button" class="hidden flex items-center space-x-4">
+                        <a href="#user-dashboard" id="user-dashboard-link" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                            My Dashboard
                         </a>
+                        <button id="user-logout-button" class="text-sm font-medium text-red-500 hover:text-red-700">
+                            (Logout)
+                        </button>
                     </div>
                 </div>
-            </nav>
-        </header>
+                
+                <!-- Separator -->
+                <span class="text-gray-300">|</span>
+
+                <!-- Admin Panel Link -->
+                <a href="#admin-login" class="text-sm font-medium text-gray-500 hover:text-indigo-600">
+                    Admin Panel
+                </a>
+            </div>
+
+        </div>
+    </nav>
+</header>
+<!-- === END OF NEW HEADER === -->
 
         <!-- Main Content Area -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -88,6 +116,9 @@
                             <button id="tab-view-deals" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                                 View/Copy Deals
                             </button>
+                            <button id="tab-manage-users" class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                                 Manage Users
+                            </button>
                         </nav>
                     </div>
 
@@ -138,6 +169,11 @@
                                     <option>All</option>
                                     <!-- Options will be populated by JS (e.g., Buyer 1, Buyer 2) -->
                                 </select>
+                                <select id="order-status-filter" class="rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                <option value="All">All Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Delivered">Delivered</option>
+                                </select>
                                 <button id="refresh-orders-btn" class="p-2 bg-indigo-100 text-indigo-600 rounded-md hover:bg-indigo-200">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101A7.002 7.002 0 0112 4c2.52 0 4.735 1.116 6.134 2.866a1 1 0 11-1.554 1.268A5.002 5.002 0 0012 6c-2.023 0-3.744 1.178-4.57 2.825A1 1 0 016.99 9H10a1 1 0 110 2H5a1 1 0 01-1-1V4a1 1 0 011-1zm10 15a1 1 0 01-1-1v-2.101A7.002 7.002 0 018 16c-2.52 0-4.735-1.116-6.134-2.866a1 1 0 111.554-1.268A5.002 5.002 0 008 14c2.023 0 3.744-1.178 4.57 2.825a1 1 0 01.437.175H10a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 01-1 1z" clip-rule="evenodd" />
@@ -173,8 +209,62 @@
                         </div>
                     </div>
 
+                    <div id="content-manage-users" class="tab-content hidden mt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Part 1: Add User Form -->
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">Add New User</h3>
+                                <form id="add-user-form" class="space-y-4">
+                                    <input type="text" id="newUserId" placeholder="New UserID (e.g., user123)" class="input-field" required>
+                                    <input type="text" id="newUserName" placeholder="User's Full Name" class="input-field" required>
+                                    <input type="password" id="newUserPassword" placeholder="New Password" class="input-field" required>
+                                    <button type="submit" class="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                        Add User
+                                    </button>
+                                    <p id="add-user-message" class="text-center mt-2"></p>
+                                </form>
+                                </div>
+
+                            <!-- Part 2: Existing Users List -->
+                            <div>
+                                <h3 class="text-xl font-semibold mb-4">Existing Users</h3>
+
+                                    <div id="users-list-loader" class="flex justify-center items-center h-48 hidden">
+                                        <div class="spinner"></div>
+                                    </div>
+
+                                    <div id="users-list-container" class="space-y-3 h-64 overflow-y-auto">
+                                    <!-- User list will be populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                 </div>
             </section>
+
+<!-- === ADD THIS NEW PAGE === -->
+            <section id="user-dashboard-page" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-extrabold text-gray-900">My Bookings</h2>
+                    <span id="user-welcome-message" class="text-lg text-gray-700"></span>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-xl p-6">
+
+                    <!-- Orders Loading Spinner -->
+                    <div id="user-orders-loader" class="flex justify-center items-center h-64">
+                        <div class="spinner"></div>
+                    </div>
+                    
+                    <!-- Orders Container -->
+                    <div id="user-orders-container" class="space-y-4">
+                        <!-- User's order items will be inserted here by JavaScript -->
+                    </div>
+                </div>
+            </section>
+<!-- === END OF NEW PAGE === -->
+
         </main>
     </div>
 
@@ -196,7 +286,7 @@
             <div class="space-y-4">
                 <!-- Purchase Link Button -->
                 <a id="detail-product-link" href="#" target="_blank" class="block w-full text-center bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-lg">
-                    Buy from Store (e.g., Amazon)
+                    Direct link to book
                 </a>
 
                 <!-- Details List -->
@@ -275,6 +365,47 @@
             </button>
         </div>
     </div>
+
+<!-- === ADD THESE 2 NEW MODALS === -->
+    <div id="user-login-modal" class="modal hidden">
+        <div class="modal-bg" onclick="closeModal('user-login-modal')"></div>
+        <div class="modal-content p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">User Login</h3>
+                    <button onclick="closeModal('user-login-modal')" class="text-gray-400 hover:text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <form id="user-login-form">
+                <div class="space-y-4">
+                    <input type="text" id="loginUserId" placeholder="Enter your UserID" class="input-field" required>
+                       <input type="password" id="loginPassword" placeholder="Enter your Password" class="input-field" required>
+                    <button type="submit" id="user-login-submit-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        <span class="submit-text">Login</span>
+                        <span class="submit-spinner hidden"><div class="spinner !w-6 !h-6 border-white/30 border-l-white mx-auto"></div></span>
+                    </button>
+                     <p id="user-login-error" class="text-red-500 text-sm text-center"></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="login-prompt-modal" class="modal hidden">
+.     <div class="modal-bg" onclick="closeModal('login-prompt-modal')"></div>
+        <div class="modal-content p-8 text-center">
+            <h3 class="text-2xl font-bold mb-4">Login Required</h3>
+            <p class="text-gray-600 mb-6">You must be logged in to book a deal.</p>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="login-prompt-close-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                 Close
+                </button>
+                <button id="login-prompt-login-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700">
+                    Login Now
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- === END OF NEW MODALS === -->
 
     <!-- Load your custom JavaScript -->
     <script src="main.js" defer></script>
