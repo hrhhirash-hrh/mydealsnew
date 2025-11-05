@@ -994,7 +994,6 @@ const updateHeaderUI = () => {
         loadOrders();
     });
 
-
     // --- INITIALIZATION ---
     updateHeaderUI(); // --- NEW --- Set initial UI state for user
     loadDeals();
