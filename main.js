@@ -938,7 +938,7 @@ const renderUserOrders = (orders) => {
             const userDeliverButtonHtml = !isDelivered ?
                 `<div class="mt-2">
                      <button class="user-deliver-btn bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold py-1 px-3 rounded-md">
-                        Mark as Received
+                        Mark as Delivered
                 </button>
                  </div>` :
                 '';
@@ -1321,3 +1321,4 @@ const renderUserOrders = (orders) => {
     loadDeals();
     handleHashChange();
 });
+
