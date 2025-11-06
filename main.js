@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyfkOa4fffqHQqx0FAiSP4cwrKnIa-KGu4QAVIZjp0XwzFJEIvW8RNhLQZ3zzZ4c_d/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2_x2QFleyuhl777OmCOIuqodpBGQdTvGO4PC8MAkUVTgdFmz8a_4bJ8M06pJLQy3w/exec"; // This is your last-used URL
     let adminToken = sessionStorage.getItem('adminToken');
     let currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     let currentDeals = [];
@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         userLogin: document.getElementById('user-login-modal'),
         loginPrompt: document.getElementById('login-prompt-modal'),
         deliveryDate: document.getElementById('delivery-date-modal'), // --- NEW ---
+        otp: document.getElementById('otp-modal')
     };
     const dealsGrid = document.getElementById('deals-grid');
     const dealsLoader = document.getElementById('deals-loader');
@@ -53,6 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileUserDashboardLink = document.getElementById('mobile-user-dashboard-link');
     const mobileUserLogoutButton = document.getElementById('mobile-user-logout-button');
     const mobileAdminLoginLink = document.getElementById('mobile-admin-login-link');
+
+    // --- ADD THESE NEW SELECTORS ---
+    const adminAuthLinks = document.getElementById('admin-auth-links');
+    const mobileLogoutButton = document.getElementById('mobile-logout-button');
+    const adminBackButton = document.getElementById('admin-back-button');
+    const userBackButton = document.getElementById('user-back-button');
+    // --- END ADD ---
 
     // User Dashboard
     const userWelcomeMessage = document.getElementById('user-welcome-message');
@@ -99,6 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const deliveryOrderIdHidden = document.getElementById('delivery-order-id-hidden');
     const deliveryDateInput = document.getElementById('delivery-date-input');
     // --- END NEW ---
+
+    // --- ADD THESE NEW OTP SELECTORS ---
+    const otpForm = document.getElementById('otp-form');
+    const otpOrderIdHidden = document.getElementById('otp-order-id-hidden');
+    const otpInput = document.getElementById('otp-input');
+    const otpError = document.getElementById('otp-error');
+    const submitOtpBtn = document.getElementById('submit-otp-btn');
+    // --- END ADD ---
 
     // Admin Deals
     const adminDealsLoader = document.getElementById('admin-deals-loader');
@@ -230,65 +246,99 @@ const formatISODate = (dateInput) => {
     };
 
     const updateHeaderUI = () => {
-        const safeSet = (el, display) => {
-            if (el) el.style.display = display;
-        };
+        // --- THIS IS THE NEW, CORRECTED FUNCTION ---
+// It uses Tailwind classes instead of inline styles to prevent layout bugs.
+const setDisplay = (el, displayType) => {
+    if (!el) return;
 
-        if (adminToken) { 
-            // ADMIN IS LOGGED IN
-            // --- Desktop ---
-            safeSet(userAuthLinks, 'none');
-            safeSet(headerSeparator, 'none');
-            if (adminLoginLink) {
-                adminLoginLink.href = '#admin-panel';
-                adminLoginLink.textContent = 'Admin Panel';
-                adminLoginLink.style.display = 'inline-block';
-            }
-            // --- Mobile ---
-            safeSet(mobileUserAuthLinks, 'none');
-            if (mobileAdminLoginLink) {
-                mobileAdminLoginLink.href = '#admin-panel';
-                mobileAdminLoginLink.textContent = 'Admin Panel';
-                mobileAdminLoginLink.style.display = 'block';
-            }
-        } else if (currentUser) { 
-            // USER IS LOGGED IN
-            // --- Desktop ---
-            safeSet(userLoginButton, 'none');
-            safeSet(userDashboardButton, 'flex');
-            safeSet(userAuthLinks, 'block'); 
-            safeSet(adminLoginLink, 'none');
-            safeSet(headerSeparator, 'none');
-            // --- Mobile ---
-            safeSet(mobileUserLoginButton, 'none');
-            safeSet(mobileUserDashboardLink, 'block');
-            safeSet(mobileUserLogoutButton, 'block');
-            safeSet(mobileUserAuthLinks, 'block');
-            safeSet(mobileAdminLoginLink, 'none');
-        } else {
-            // EVERYONE IS LOGGED OUT
-            // --- Desktop ---
-            safeSet(userLoginButton, 'inline-block');
-            safeSet(userDashboardButton, 'none');
-            safeSet(userAuthLinks, 'block');
-            if (adminLoginLink) {
-                adminLoginLink.href = '#admin-login';
-                adminLoginLink.textContent = 'Admin Panel';
-                adminLoginLink.style.display = 'inline-block';
-            }
-            safeSet(headerSeparator, 'inline-block');
-            // --- Mobile ---
-            safeSet(mobileUserLoginButton, 'block');
-            safeSet(mobileUserDashboardLink, 'none');
-            safeSet(mobileUserLogoutButton, 'none');
-            safeSet(mobileUserAuthLinks, 'block');
-            if (mobileAdminLoginLink) {
-                mobileAdminLoginLink.href = '#admin-login';
-                mobileAdminLoginLink.textContent = 'Admin Panel';
-                mobileAdminLoginLink.style.display = 'block';
-            }
-        }
-    };
+    // List of all display classes we're managing
+    const displayClasses = ['hidden', 'flex', 'block', 'inline-block'];
+    
+    // Always remove them all first to reset the state
+    el.classList.remove(...displayClasses);
+
+    // Now, add the correct class based on the 'displayType'
+    switch (displayType) {
+        case 'none':
+            el.classList.add('hidden');
+            break;
+        case 'flex':
+            el.classList.add('flex');
+            break;
+        case 'block':
+            el.classList.add('block');
+            break;
+        case 'inline-block':
+            el.classList.add('inline-block');
+            break;
+    }
+};
+
+        if (adminToken) { 
+            // ADMIN IS LOGGED IN
+            setDisplay(userAuthLinks, 'none'); // Hide User links
+            setDisplay(headerSeparator, 'none'); // Hide Separator
+            setDisplay(adminAuthLinks, 'flex'); // Show Admin wrapper
+
+            // --- THIS IS THE FIX ---
+            // Show the "Admin Panel" link and point it to the panel
+            if (adminLoginLink) {
+                adminLoginLink.href = '#admin-panel';
+            	adminLoginLink.style.display = 'inline-block';
+            }
+            setDisplay(logoutButton, 'inline-block'); // Show Admin logout
+            // --- END FIX ---
+
+            // --- Mobile ---
+            setDisplay(mobileUserAuthLinks, 'none');
+            setDisplay(mobileLogoutButton, 'block');
+            if (mobileAdminLoginLink) {
+            	mobileAdminLoginLink.href = '#admin-panel';
+            	mobileAdminLoginLink.style.display = 'block';
+            }
+        } else if (currentUser) { 
+            // USER IS LOGGED IN
+            setDisplay(userLoginButton, 'none');
+            setDisplay(userDashboardButton, 'flex');
+            setDisplay(userAuthLinks, 'block'); 
+            setDisplay(adminAuthLinks, 'none'); // Hide Admin wrapper
+            setDisplay(headerSeparator, 'none');
+
+            // --- Mobile ---
+            setDisplay(mobileUserLoginButton, 'none');
+            setDisplay(mobileUserDashboardLink, 'block');
+            setDisplay(mobileUserLogoutButton, 'block');
+            setDisplay(mobileUserAuthLinks, 'block');
+            setDisplay(mobileAdminLoginLink, 'none');
+        } else {
+            // EVERYONE IS LOGGED OUT
+            setDisplay(userLoginButton, 'inline-block');
+            setDisplay(userDashboardButton, 'none');
+            setDisplay(userAuthLinks, 'block');
+            setDisplay(adminAuthLinks, 'flex'); // Show Admin wrapper
+            setDisplay(logoutButton, 'none'); // Hide Admin logout
+            setDisplay(headerSeparator, 'inline-block');
+          
+            // --- THIS IS THE FIX ---
+            // Show "Admin Panel" link and point it to the login
+            if (adminLoginLink) {
+            	adminLoginLink.href = '#admin-login';
+            	adminLoginLink.style.display = 'inline-block';
+            }
+            // --- END FIX ---
+
+            // --- Mobile ---
+            setDisplay(mobileUserLoginButton, 'block');
+            setDisplay(mobileUserDashboardLink, 'none');
+          	setDisplay(mobileUserLogoutButton, 'none');
+          	setDisplay(mobileUserAuthLinks, 'block');
+      	    setDisplay(mobileLogoutButton, 'none');
+          	if (mobileAdminLoginLink) {
+            	mobileAdminLoginLink.href = '#admin-login';
+          	    mobileAdminLoginLink.style.display = 'block';
+          	}
+        }
+    };
 
     // --- API CALLS ---
 
@@ -551,6 +601,63 @@ const formatISODate = (dateInput) => {
         }
     };
 
+    // --- ADD THESE 2 NEW FUNCTIONS ---
+
+    /**
+     * --- NEW ---
+     * Opens the OTP modal and sets the hidden order ID.
+     */
+    const openOtpModal = (orderId) => {
+        otpOrderIdHidden.value = orderId;
+        otpInput.value = ''; // Clear old OTP
+        otpError.textContent = '';
+        showModal('otp-modal');
+    };
+
+    /**
+     * --- NEW ---
+     * Handles the submission of the user's OTP form.
+     */
+    const handleOtpSubmit = async (e) => {
+        e.preventDefault();
+        if (!currentUser) return; // Must be logged in
+
+        const orderId = otpOrderIdHidden.value;
+        const otp = otpInput.value;
+
+        showSubmitLoading(submitOtpBtn, true);
+        otpError.textContent = '';
+
+        const payload = {
+            action: 'userAddOTP',
+            userId: currentUser.userId,
+            orderId,
+            otp
+        };
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                closeModal('otp-modal');
+                showMessage('Success', 'OTP added successfully!');
+                loadUserOrders(); // Refresh the user's dashboard
+            } else {
+                otpError.textContent = result.message || 'Failed to save OTP.';
+            }
+        } catch (error) {
+            otpError.textContent = 'An error occurred. Please try again.';
+        } finally {
+            showSubmitLoading(submitOtpBtn, false);
+        }
+    };
+    // --- END ADD ---
+
     const handleBookingSubmit = async (e) => {
         e.preventDefault();
         bookingError.textContent = '';
@@ -794,6 +901,7 @@ const formatISODate = (dateInput) => {
                     <div><strong>Mobile:</strong> ${order.UserMobile}</div>
                     <div><strong>Expected:</strong> ${formatISODate(order.UserDeliveryDate)}</div>
                     <div><strong>UPI:</strong> ${order.UserUpiId}</div>
+                    <div><strong>OTP:</strong> ${order.OTP || 'N/A'}</div>
                 </div>
                 <div class="mt-4 flex items-center justify-between">
                     <button class="deliver-btn ${isDelivered ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'} text-white text-sm font-semibold py-1 px-3 rounded-md disabled:bg-gray-400" ${isDelivered ? 'disabled' : ''}>
@@ -833,7 +941,19 @@ const renderUserOrders = (orders) => {
                         Mark as Received
                 </button>
                  </div>` :
-                '';    
+                '';
+                
+            // --- ADD THIS NEW OTP VARIABLE ---
+            const otpHtml = order.OTP ?
+                // If OTP exists, show it
+                `<div class="mt-2"><strong>OTP:</strong> ${order.OTP}</div>` :
+                // If not, show the "Add OTP" button
+                `<div class="mt-2">
+                    <button class="add-otp-btn bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold py-1 px-2 rounded-md">
+                        Add OTP
+                    </button>
+                </div>`;
+            // --- END ADD ---
 
             const card = document.createElement('div');
             card.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
@@ -858,6 +978,7 @@ const renderUserOrders = (orders) => {
                     <div><strong>Mobile:</strong> ${order.UserMobile}</div>
                     <div><strong>UPI:</strong> ${order.UserUpiId}</div>
                     ${!isDelivered ? userDeliverButtonHtml : ''} <!-- "Mark as Received" button goes here -->
+                    ${otpHtml} <!-- ADD THIS LINE -->
                 </div>
                 </div>
                             `;
@@ -867,6 +988,14 @@ const renderUserOrders = (orders) => {
                 }
             // --- END ADD ---
 
+            // --- ADD THIS NEW LISTENER ---
+            if (!order.OTP) {
+                const addOtpBtn = card.querySelector('.add-otp-btn');
+                if (addOtpBtn) {
+                    addOtpBtn.addEventListener('click', () => openOtpModal(order.OrderID));
+                }
+            }
+            // --- END ADD ---
 
             userOrdersContainer.appendChild(card);
         });
@@ -1059,6 +1188,22 @@ const renderUserOrders = (orders) => {
         mobileUserLogoutButton, 
         mobileAdminLoginLink
     ];
+
+    // --- ADD THESE NEW LISTENERS ---
+    if (adminBackButton) {
+        adminBackButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.hash = '#';
+        });
+    }
+    if (userBackButton) {
+        userBackButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.location.hash = '#';
+        });
+    }
+    // --- END ADD ---
+
     mobileLinks.forEach(link => {
         if (link) {
             link.addEventListener('click', () => {
@@ -1111,6 +1256,18 @@ const renderUserOrders = (orders) => {
         window.location.hash = '#';
         updateHeaderUI();
     });
+
+    // --- ADD THIS LISTENER ---
+    if (mobileLogoutButton) {
+        mobileLogoutButton.addEventListener('click', () => {
+            adminToken = null;
+            sessionStorage.removeItem('adminToken');
+            window.location.hash = '#';
+            updateHeaderUI();
+            mobileMenu.classList.add('hidden'); // Also close menu
+        });
+    }
+    // --- END ADD ---
     
     // Admin Tabs
     adminTabs.addDeal.addEventListener('click', () => switchAdminTab('addDeal'));
@@ -1154,6 +1311,10 @@ const renderUserOrders = (orders) => {
     // Listener for the new delivery date modal form
     deliveryDateForm.addEventListener('submit', handleDeliveryDateSubmit);
     // --- END NEW ---
+
+    // --- ADD THIS NEW LISTENER ---
+    otpForm.addEventListener('submit', handleOtpSubmit);
+    // --- END ADD ---
 
     // --- INITIALIZATION ---
     updateHeaderUI();
