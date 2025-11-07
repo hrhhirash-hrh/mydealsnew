@@ -114,3 +114,65 @@ html {
   }
 }
 
+/* === DEAL CARD BEAUTIFY (Tailwind-compatible) === */
+
+/* Card base (the div inside dealsGrid) */
+#deals-grid > div {
+  border-radius: 16px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.25s ease;
+}
+
+#deals-grid > div:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Image container */
+#deals-grid img {
+  border-radius: 10px;
+  padding: 6px;
+  background: #f8fafc;
+  transition: transform 0.2s ease;
+}
+
+#deals-grid > div:hover img {
+  transform: scale(1.03);
+}
+
+/* Commission + Quantity text section */
+#deals-grid span.bg-green-100 {
+  background: linear-gradient(90deg, #c7f9cc, #80ed99);
+  color: #065f46;
+  font-weight: 600;
+  border-radius: 50px;
+  padding: 6px 14px;
+}
+
+#deals-grid span.text-indigo-600 {
+  font-weight: 600;
+}
+
+/* Show Deal button */
+#deals-grid button.show-deal-btn {
+  background: linear-gradient(90deg, #5b3ff6, #7367f0);
+  border: none;
+  box-shadow: 0 3px 8px rgba(91, 63, 246, 0.3);
+  transition: all 0.25s ease;
+}
+
+#deals-grid button.show-deal-btn:hover {
+  background: linear-gradient(90deg, #4b33e5, #6252e0);
+  box-shadow: 0 4px 12px rgba(91, 63, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Product name centering (mobile only) */
+@media (max-width: 768px) {
+  #deals-grid h3 {
+    text-align: center;
+  }
+}
+
