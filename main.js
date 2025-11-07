@@ -47,17 +47,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const userLoginError = document.getElementById('user-login-error');
 
     // Mobile Menu
-    const menuTogglerButton = document.getElementById('menu-toggler-button');
-    const mobileMenu = document.getElementById('mobile-menu');
-    const mobileUserAuthLinks = document.getElementById('mobile-user-auth-links');
-    const mobileUserLoginButton = document.getElementById('mobile-user-login-button');
-    const mobileUserDashboardLink = document.getElementById('mobile-user-dashboard-link');
-    const mobileUserLogoutButton = document.getElementById('mobile-user-logout-button');
-    const mobileAdminLoginLink = document.getElementById('mobile-admin-login-link');
+// ✅ Mobile Menu (Fixed selectors to match HTML)
+const menuTogglerButton = document.getElementById('menu-toggler-button');
+const mobileMenu = document.getElementById('mobile-menu');
+const mobileUserLoginButton = document.getElementById('mobileUserLoginButton');
+const mobileUserDashboardLink = document.getElementById('mobileUserDashboardLink');
+const mobileUserLogoutButton = document.getElementById('mobileUserLogoutButton');
+const mobileAdminLoginLink = document.getElementById('mobileAdminLoginLink');
+const mobileLogoutButton = document.getElementById('mobileLogoutButton');
+
+
 
     // --- ADD THESE NEW SELECTORS ---
     const adminAuthLinks = document.getElementById('admin-auth-links');
-    const mobileLogoutButton = document.getElementById('mobile-logout-button');
     const adminBackButton = document.getElementById('admin-back-button');
     const userBackButton = document.getElementById('user-back-button');
     // --- END ADD ---
@@ -245,100 +247,66 @@ const formatISODate = (dateInput) => {
         updateHeaderUI();
     };
 
-    const updateHeaderUI = () => {
-        // --- THIS IS THE NEW, CORRECTED FUNCTION ---
-// It uses Tailwind classes instead of inline styles to prevent layout bugs.
-const setDisplay = (el, displayType) => {
-    if (!el) return;
+    // --- FIXED UPDATEHEADERUI FUNCTION ---
+// ✅ Final fixed updateHeaderUI for desktop + mobile
+const updateHeaderUI = () => {
+  adminToken = sessionStorage.getItem('adminToken');
+  currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
 
-    // List of all display classes we're managing
-    const displayClasses = ['hidden', 'flex', 'block', 'inline-block'];
-    
-    // Always remove them all first to reset the state
-    el.classList.remove(...displayClasses);
+  const show = el => el && el.classList.remove('hidden');
+  const hide = el => el && el.classList.add('hidden');
 
-    // Now, add the correct class based on the 'displayType'
-    switch (displayType) {
-        case 'none':
-            el.classList.add('hidden');
-            break;
-        case 'flex':
-            el.classList.add('flex');
-            break;
-        case 'block':
-            el.classList.add('block');
-            break;
-        case 'inline-block':
-            el.classList.add('inline-block');
-            break;
-    }
+  // Reset all visibility
+  [
+    userLoginButton, userDashboardButton, userLogoutButton,
+    adminLoginLink, logoutButton, headerSeparator,
+    mobileUserLoginButton, mobileUserDashboardLink,
+    mobileUserLogoutButton, mobileAdminLoginLink, mobileLogoutButton
+  ].forEach(hide);
+
+  // ✅ ADMIN LOGGED IN
+  if (adminToken) {
+    // Desktop
+    show(adminLoginLink);
+    adminLoginLink.href = '#admin-panel';
+    show(logoutButton);
+    hide(userAuthLinks);
+    hide(headerSeparator);
+
+    // Mobile
+    show(mobileAdminLoginLink);
+    mobileAdminLoginLink.href = '#admin-panel';
+    show(mobileLogoutButton);
+  }
+
+  // ✅ USER LOGGED IN
+  else if (currentUser) {
+    // Desktop
+    show(userDashboardButton);
+    show(userLogoutButton);
+    hide(adminLoginLink);
+    hide(headerSeparator);
+
+    // Mobile
+    show(mobileUserDashboardLink);
+    show(mobileUserLogoutButton);
+  }
+
+  // ✅ VISITOR (Not logged in)
+  else {
+    // Desktop
+    show(userLoginButton);
+    show(adminLoginLink);
+    adminLoginLink.href = '#admin-login';
+    show(headerSeparator);
+
+    // Mobile
+    show(mobileUserLoginButton);
+    show(mobileAdminLoginLink);
+  }
+
+  if (mobileMenu) mobileMenu.classList.add('hidden'); // Always close menu
 };
-
-        if (adminToken) { 
-            // ADMIN IS LOGGED IN
-            setDisplay(userAuthLinks, 'none'); // Hide User links
-            setDisplay(headerSeparator, 'none'); // Hide Separator
-            setDisplay(adminAuthLinks, 'flex'); // Show Admin wrapper
-
-            // --- THIS IS THE FIX ---
-            // Show the "Admin Panel" link and point it to the panel
-            if (adminLoginLink) {
-                adminLoginLink.href = '#admin-panel';
-            	adminLoginLink.style.display = 'inline-block';
-            }
-            setDisplay(logoutButton, 'inline-block'); // Show Admin logout
-            // --- END FIX ---
-
-            // --- Mobile ---
-            setDisplay(mobileUserAuthLinks, 'none');
-            setDisplay(mobileLogoutButton, 'block');
-            if (mobileAdminLoginLink) {
-            	mobileAdminLoginLink.href = '#admin-panel';
-            	mobileAdminLoginLink.style.display = 'block';
-            }
-        } else if (currentUser) { 
-            // USER IS LOGGED IN
-            setDisplay(userLoginButton, 'none');
-            setDisplay(userDashboardButton, 'flex');
-            setDisplay(userAuthLinks, 'block'); 
-            setDisplay(adminAuthLinks, 'none'); // Hide Admin wrapper
-            setDisplay(headerSeparator, 'none');
-
-            // --- Mobile ---
-            setDisplay(mobileUserLoginButton, 'none');
-            setDisplay(mobileUserDashboardLink, 'block');
-            setDisplay(mobileUserLogoutButton, 'block');
-            setDisplay(mobileUserAuthLinks, 'block');
-            setDisplay(mobileAdminLoginLink, 'none');
-        } else {
-            // EVERYONE IS LOGGED OUT
-            setDisplay(userLoginButton, 'inline-block');
-            setDisplay(userDashboardButton, 'none');
-            setDisplay(userAuthLinks, 'block');
-            setDisplay(adminAuthLinks, 'flex'); // Show Admin wrapper
-            setDisplay(logoutButton, 'none'); // Hide Admin logout
-            setDisplay(headerSeparator, 'inline-block');
-          
-            // --- THIS IS THE FIX ---
-            // Show "Admin Panel" link and point it to the login
-            if (adminLoginLink) {
-            	adminLoginLink.href = '#admin-login';
-            	adminLoginLink.style.display = 'inline-block';
-            }
-            // --- END FIX ---
-
-            // --- Mobile ---
-            setDisplay(mobileUserLoginButton, 'block');
-            setDisplay(mobileUserDashboardLink, 'none');
-          	setDisplay(mobileUserLogoutButton, 'none');
-          	setDisplay(mobileUserAuthLinks, 'block');
-      	    setDisplay(mobileLogoutButton, 'none');
-          	if (mobileAdminLoginLink) {
-            	mobileAdminLoginLink.href = '#admin-login';
-          	    mobileAdminLoginLink.style.display = 'block';
-          	}
-        }
-    };
 
     // --- API CALLS ---
 
@@ -834,27 +802,34 @@ const setDisplay = (el, displayType) => {
         deals.forEach(deal => {
             const card = document.createElement('div');
             // This class makes the card a flex-column, so mt-auto in the content works
-            card.className = 'group bg-white shadow-xl rounded-xl overflow-hidden transition-all duration-300 flex flex-col';
             card.innerHTML = `
-                <div class="h-56 w-full overflow-hidden bg-gray-200">
-                    <img class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-110" src="${deal.ImageUrl}" alt="${deal.ProductName}" onerror="this.src='https://placehold.co/600x400/e2e8f0/94a3b8?text=Image+Not+Found';">
-                </div>
-                <div class="p-6 flex flex-col flex-grow">
-                    <h3 class="text-xl font-semibold mb-2 truncate" title="${deal.ProductName}">${deal.ProductName}</h3>
-                    <!-- This div is now pushed to the bottom by mt-auto -->
-                    <div class="flex justify-between items-baseline mb-4 mt-auto">
-                        <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full whitespace-nowrap mr-2">
-                            Commission: ₹${deal.Commission}
-                        </span>
-                        <span class="text-lg font-bold text-indigo-600 whitespace-nowrap flex-shrink-0">
-                            ${deal.QuantityLeft} Left
-                        </span>
-                    </div>
-                    <button class="show-deal-btn w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                        Show Deal
-                    </button>
-                </div>
-            `;
+  <div class="h-56 w-full overflow-hidden bg-gray-200">
+      <img class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-110" 
+           src="${deal.ImageUrl}" 
+           alt="${deal.ProductName}" 
+           onerror="this.src='https://placehold.co/600x400/e2e8f0/94a3b8?text=Image+Not+Found';">
+  </div>
+  <div class="p-6 flex flex-col justify-between flex-grow">
+      <div>
+          <h3 class="text-xl font-semibold mb-2 truncate text-center sm:text-left" title="${deal.ProductName}">
+  ${deal.ProductName}
+</h3>
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center items-center mb-4 mt-auto gap-1">
+    <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+        Commission: ₹${deal.Commission}
+    </span>
+    <span class="text-sm font-semibold text-indigo-600">
+        ${deal.QuantityLeft} Left
+    </span>
+</div>
+
+      </div>
+      <button class="show-deal-btn w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition">
+          Show Deal
+      </button>
+  </div>
+`;
+
             card.querySelector('.show-deal-btn').addEventListener('click', () => showDealDetail(deal.ProductID));
             dealsGrid.appendChild(card);
         });
@@ -1182,12 +1157,23 @@ const renderUserOrders = (orders) => {
     }
 
     // Mobile Menu Link Listeners
-    const mobileLinks = [
-        mobileUserLoginButton, 
-        mobileUserDashboardLink, 
-        mobileUserLogoutButton, 
-        mobileAdminLoginLink
-    ];
+    // ✅ Updated mobile link array + auto-close behaviour
+// ✅ Close menu when any mobile link is clicked
+const mobileLinks = [
+  mobileUserLoginButton,
+  mobileUserDashboardLink,
+  mobileUserLogoutButton,
+  mobileAdminLoginLink,
+  mobileLogoutButton
+];
+mobileLinks.forEach(link => {
+  if (link) {
+    link.addEventListener('click', () => {
+      if (mobileMenu) mobileMenu.classList.add('hidden');
+    });
+  }
+});
+
 
     // --- ADD THESE NEW LISTENERS ---
     if (adminBackButton) {
@@ -1267,6 +1253,19 @@ const renderUserOrders = (orders) => {
             mobileMenu.classList.add('hidden'); // Also close menu
         });
     }
+
+    // === NEW: Mobile Admin Logout (for separate admin link) ===
+    //if (mobileAdminLogoutButton) {
+    //mobileAdminLogoutButton.addEventListener('click', () => {
+    //adminToken = null;
+    //sessionStorage.removeItem('adminToken');
+    //updateHeaderUI();
+    //window.location.hash = '#';
+    //if (mobileMenu) mobileMenu.classList.add('hidden'); // close menu after logout
+    //});
+    //}
+
+
     // --- END ADD ---
     
     // Admin Tabs
@@ -1298,6 +1297,126 @@ const renderUserOrders = (orders) => {
         loadOrders();
     });
 
+    // === NEW: Download Orders as Excel ===
+const downloadOrdersBtn = document.getElementById('download-orders-btn');
+if (downloadOrdersBtn) {
+  downloadOrdersBtn.addEventListener('click', async () => {
+    if (!adminToken) return alert("Unauthorized. Please log in again.");
+
+    // Get filtered data again from backend
+    const buyerFilter = orderFilter.value;
+    const statusFilter = orderStatusFilter.value;
+    const searchTerm = orderSearchInput.value;
+
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'getOrders',
+          token: adminToken,
+          buyerFilter,
+          statusFilter,
+          searchTerm
+        }),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      const result = await response.json();
+      if (result.status === 'success' && result.orders.length > 0) {
+        exportToExcel(result.orders, 'Filtered_Orders');
+      } else {
+        alert('No data to download for current filter.');
+      }
+    } catch (error) {
+      alert('Error fetching data.');
+      console.error(error);
+    }
+  });
+}
+
+// === Helper Function to Export to Excel ===
+function exportToExcel(data, filename) {
+  // Convert array of objects to worksheet
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+  XLSX.writeFile(workbook, `${filename}.xlsx`);
+}
+
+// === NEW: Download as PDF (screenshot style) ===
+const downloadPdfBtn = document.getElementById('download-pdf-btn');
+if (downloadPdfBtn) {
+  downloadPdfBtn.addEventListener('click', async () => {
+    const container = document.getElementById('orders-container');
+    if (!container) return alert("No orders to capture.");
+
+    // show loading animation
+    const originalHtml = downloadPdfBtn.innerHTML;
+    downloadPdfBtn.innerHTML = '<span class="animate-pulse">⏳</span>';
+    downloadPdfBtn.disabled = true;
+
+    try {
+      // === Capture orders 6 per page ===
+      const orders = Array.from(container.children); // get each order card
+      const ordersPerPage = 6;
+      const orderGroups = [];
+      for (let i = 0; i < orders.length; i += ordersPerPage) {
+        orderGroups.push(orders.slice(i, i + ordersPerPage));
+      }
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+
+      // Add header (only once)
+      pdf.setFontSize(14);
+      pdf.text('DealBooker - Orders Report', margin + 20, 40);
+      pdf.setFontSize(10);
+      pdf.text('Generated on: ' + new Date().toLocaleString('en-IN'), margin + 20, 60);
+
+      // Now render each batch of 6
+      for (let pageIndex = 0; pageIndex < orderGroups.length; pageIndex++) {
+        const group = orderGroups[pageIndex];
+
+        // Create a temp wrapper for this page
+        const tempDiv = document.createElement('div');
+        tempDiv.style.background = '#fff';
+        tempDiv.style.padding = '10px';
+        tempDiv.style.width = container.offsetWidth + 'px';
+        group.forEach(el => tempDiv.appendChild(el.cloneNode(true)));
+        document.body.appendChild(tempDiv);
+
+        // Render only this batch
+        const canvas = await html2canvas(tempDiv, { scale: 2, backgroundColor: '#ffffff' });
+        document.body.removeChild(tempDiv);
+
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = pageWidth - margin * 2;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const yOffset = 80;
+
+        if (pageIndex > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', margin, yOffset, imgWidth, imgHeight);
+
+        // Footer
+        pdf.setFontSize(9);
+        pdf.text(`Page ${pageIndex + 1} of ${orderGroups.length}`, pageWidth - 60, pageHeight - 10);
+      }
+
+      pdf.save(`Orders_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    } catch (err) {
+      console.error(err);
+      alert('Error generating PDF.');
+    } finally {
+      downloadPdfBtn.innerHTML = originalHtml;
+      downloadPdfBtn.disabled = false;
+    }
+  });
+}
+
+
     // --- NEW: Event Listeners for Search and Delivery Date ---
     // Debounced search
     let searchTimeout = null;
@@ -1321,4 +1440,3 @@ const renderUserOrders = (orders) => {
     loadDeals();
     handleHashChange();
 });
-
