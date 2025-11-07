@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2_x2QFleyuhl777OmCOIuqodpBGQdTvGO4PC8MAkUVTgdFmz8a_4bJ8M06pJLQy3w/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvSjNOZ6P3Y5QZp0nAcaNXx4gfbfVrnye50iZaJ3iMS6apfS2DP3adnRqS5hij9dTa/exec"; // This is your last-used URL
     let adminToken = sessionStorage.getItem('adminToken');
     let currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     let currentDeals = [];
@@ -1343,86 +1343,79 @@ function exportToExcel(data, filename) {
 }
 
 // === NEW: Download as PDF (screenshot style) ===
-// === FINAL FIX: Download Orders as PDF (100% Mobile Safe) ===
 const downloadPdfBtn = document.getElementById('download-pdf-btn');
 if (downloadPdfBtn) {
   downloadPdfBtn.addEventListener('click', async () => {
     const container = document.getElementById('orders-container');
-    if (!container || container.children.length === 0)
-      return alert("No orders to capture.");
+    if (!container) return alert("No orders to capture.");
 
-    const orders = Array.from(container.children);
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p', 'pt', 'a4');
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 20;
-    let yOffset = 80; // start below header
-
-    // Loading state
+    // show loading animation
     const originalHtml = downloadPdfBtn.innerHTML;
-    downloadPdfBtn.disabled = true;
     downloadPdfBtn.innerHTML = '<span class="animate-pulse">⏳</span>';
+    downloadPdfBtn.disabled = true;
 
     try {
-      // Add header
-      pdf.setFontSize(14);
-      pdf.text('DealBooker - Orders Report', margin + 10, 40);
-      pdf.setFontSize(10);
-      pdf.text('Generated on: ' + new Date().toLocaleString('en-IN'), margin + 10, 60);
+      // === Capture orders 6 per page ===
+      const orders = Array.from(container.children); // get each order card
+      const ordersPerPage = 6;
+      const orderGroups = [];
+      for (let i = 0; i < orders.length; i += ordersPerPage) {
+        orderGroups.push(orders.slice(i, i + ordersPerPage));
+      }
 
-      for (let i = 0; i < orders.length; i++) {
-        const el = orders[i].cloneNode(true);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+
+      // Add header (only once)
+      pdf.setFontSize(14);
+      pdf.text('DealBooker - Orders Report', margin + 20, 40);
+      pdf.setFontSize(10);
+      pdf.text('Generated on: ' + new Date().toLocaleString('en-IN'), margin + 20, 60);
+
+      // Now render each batch of 6
+      for (let pageIndex = 0; pageIndex < orderGroups.length; pageIndex++) {
+        const group = orderGroups[pageIndex];
+
+        // Create a temp wrapper for this page
         const tempDiv = document.createElement('div');
         tempDiv.style.background = '#fff';
-        tempDiv.style.padding = '8px';
-        tempDiv.style.width = '800px';
-        tempDiv.appendChild(el);
+        tempDiv.style.padding = '10px';
+        tempDiv.style.width = container.offsetWidth + 'px';
+        group.forEach(el => tempDiv.appendChild(el.cloneNode(true)));
         document.body.appendChild(tempDiv);
 
-        await new Promise(r => setTimeout(r, 200)); // render wait
+        // Render only this batch
+        const canvas = await html2canvas(tempDiv, { scale: 2, backgroundColor: '#ffffff' });
+        document.body.removeChild(tempDiv);
 
-        const canvas = await html2canvas(tempDiv, { scale: 2, useCORS: true });
         const imgData = canvas.toDataURL('image/png');
         const imgWidth = pageWidth - margin * 2;
-        // === Adaptive height scaling ===
-        let imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const yOffset = 80;
 
-        // Detect mobile vs desktop to adjust image scale
-        const isMobile = window.innerWidth < 768; // mobile breakpoint
-        if (isMobile) {
-         imgHeight *= 0.8; // slightly shrink for 3 per page
-        } else {
-         imgHeight *= 0.7; // shrink a bit more for 4 per page on desktop
-        }
-
-
-        // If it doesn't fit, create a new page
-        if (yOffset + imgHeight > pageHeight - 40) {
-          pdf.addPage();
-          yOffset = 80;
-          pdf.setFontSize(14);
-          pdf.text('DealBooker - Orders Report', margin + 10, 40);
-          pdf.setFontSize(10);
-          pdf.text('Generated on: ' + new Date().toLocaleString('en-IN'), margin + 10, 60);
-        }
-
+        if (pageIndex > 0) pdf.addPage();
         pdf.addImage(imgData, 'PNG', margin, yOffset, imgWidth, imgHeight);
-        yOffset += imgHeight + 10;
 
-        document.body.removeChild(tempDiv);
+        // Footer
+        pdf.setFontSize(9);
+        pdf.text(`Page ${pageIndex + 1} of ${orderGroups.length}`, pageWidth - 60, pageHeight - 10);
       }
 
       pdf.save(`Orders_${new Date().toISOString().split('T')[0]}.pdf`);
+
     } catch (err) {
       console.error(err);
       alert('Error generating PDF.');
     } finally {
-      downloadPdfBtn.disabled = false;
       downloadPdfBtn.innerHTML = originalHtml;
+      downloadPdfBtn.disabled = false;
     }
   });
 }
+
 
     // --- NEW: Event Listeners for Search and Delivery Date ---
     // Debounced search
