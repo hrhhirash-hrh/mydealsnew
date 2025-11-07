@@ -98,3 +98,19 @@ html {
 #mobile-user-dashboard-link {
     display: block;
 }
+
+/* Make "Show Deal" button smaller only on mobile */
+@media (max-width: 640px) {
+  .show-deal-btn {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .deal-card .flex.flex-col.items-center.mb-4.mt-auto {
+    margin-bottom: 0.5rem;
+  }
+}
+
