@@ -1343,79 +1343,96 @@ function exportToExcel(data, filename) {
 }
 
 // === NEW: Download as PDF (screenshot style) ===
+// === UNIVERSAL DESKTOP-STYLE PDF DOWNLOAD (WORKS ON MOBILE TOO) ===
 const downloadPdfBtn = document.getElementById('download-pdf-btn');
 if (downloadPdfBtn) {
   downloadPdfBtn.addEventListener('click', async () => {
     const container = document.getElementById('orders-container');
     if (!container) return alert("No orders to capture.");
 
-    // show loading animation
     const originalHtml = downloadPdfBtn.innerHTML;
-    downloadPdfBtn.innerHTML = '<span class="animate-pulse">⏳</span>';
+    downloadPdfBtn.innerHTML = '<span class="animate-pulse">⏳ Generating...</span>';
     downloadPdfBtn.disabled = true;
 
-    try {
-      // === Capture orders 6 per page ===
-      const orders = Array.from(container.children); // get each order card
-      const ordersPerPage = 6;
-      const orderGroups = [];
-      for (let i = 0; i < orders.length; i += ordersPerPage) {
-        orderGroups.push(orders.slice(i, i + ordersPerPage));
-      }
+    // Save original styles
+    const originalWidth = container.style.width;
+    const originalTransform = container.style.transform;
+    const originalTransformOrigin = container.style.transformOrigin;
 
+    try {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('p', 'pt', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 20;
 
-      // Add header (only once)
-      pdf.setFontSize(14);
-      pdf.text('DealBooker - Orders Report', margin + 20, 40);
-      pdf.setFontSize(10);
-      pdf.text('Generated on: ' + new Date().toLocaleString('en-IN'), margin + 20, 60);
+      // 🧩 Force mobile to render as desktop
+      if (window.innerWidth < 768) {
+        container.style.width = '1024px';
+        container.style.transform = 'scale(0.9)';
+        container.style.transformOrigin = 'top left';
+      }
 
-      // Now render each batch of 6
-      for (let pageIndex = 0; pageIndex < orderGroups.length; pageIndex++) {
-        const group = orderGroups[pageIndex];
+      // Force browser to reflow
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-        // Create a temp wrapper for this page
-        const tempDiv = document.createElement('div');
-        tempDiv.style.background = '#fff';
-        tempDiv.style.padding = '10px';
-        tempDiv.style.width = container.offsetWidth + 'px';
-        group.forEach(el => tempDiv.appendChild(el.cloneNode(true)));
-        document.body.appendChild(tempDiv);
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        windowWidth: document.documentElement.scrollWidth,
+        windowHeight: document.documentElement.scrollHeight
+      });
 
-        // Render only this batch
-        const canvas = await html2canvas(tempDiv, { scale: 2, backgroundColor: '#ffffff' });
-        document.body.removeChild(tempDiv);
+      // Restore original styles
+      container.style.width = originalWidth;
+      container.style.transform = originalTransform;
+      container.style.transformOrigin = originalTransformOrigin;
 
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = pageWidth - margin * 2;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        const yOffset = 80;
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const imgWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        if (pageIndex > 0) pdf.addPage();
-        pdf.addImage(imgData, 'PNG', margin, yOffset, imgWidth, imgHeight);
+      // ✅ Custom fix: ensure only ~5 full orders per page (no half-cuts)
+      const ordersPerPage = 5;
+      const orderCards = container.children.length;
+      const approxCardHeight = canvas.height / orderCards;
+      const chunkHeight = approxCardHeight * ordersPerPage;
+      const totalPages = Math.ceil(canvas.height / chunkHeight);
 
-        // Footer
+      for (let i = 0; i < totalPages; i++) {
+        const srcY = i * chunkHeight;
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = Math.min(chunkHeight, canvas.height - srcY);
+        const ctx = pageCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, -srcY);
+
+        const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.9);
+
+        if (i > 0) pdf.addPage();
+        const imgH = (pageCanvas.height * imgWidth) / pageCanvas.width;
+        pdf.addImage(pageImgData, 'JPEG', margin, 40, imgWidth, imgH);
         pdf.setFontSize(9);
-        pdf.text(`Page ${pageIndex + 1} of ${orderGroups.length}`, pageWidth - 60, pageHeight - 10);
+        pdf.text(`Page ${i + 1} of ${totalPages}`, pageWidth - 60, pageHeight - 10);
       }
 
       pdf.save(`Orders_${new Date().toISOString().split('T')[0]}.pdf`);
-
     } catch (err) {
       console.error(err);
       alert('Error generating PDF.');
     } finally {
+      container.style.width = originalWidth;
+      container.style.transform = originalTransform;
+      container.style.transformOrigin = originalTransformOrigin;
+
       downloadPdfBtn.innerHTML = originalHtml;
       downloadPdfBtn.disabled = false;
     }
   });
 }
-
 
     // --- NEW: Event Listeners for Search and Delivery Date ---
     // Debounced search
