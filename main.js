@@ -811,16 +811,17 @@ const updateHeaderUI = () => {
   </div>
   <div class="p-6 flex flex-col justify-between flex-grow">
       <div>
-          <h3 class="text-xl font-semibold mb-2 truncate text-center sm:text-left" title="${deal.ProductName} ${deal.ProductVariant}">
-  ${deal.ProductName} 
-  <span class="text-sm text-gray-500 font-normal">
-  (${deal.ProductVariant})
+          <h3 class="text-lg sm:text-xl font-semibold mb-2 flex items-center justify-center sm:justify-start gap-1 truncate" 
+     title="${deal.ProductName} ${deal.ProductVariant}">
+  <span class="truncate">${deal.ProductName}</span>
+  <span class="text-sm text-gray-500 font-normal flex-shrink-0">
+    (${deal.ProductVariant})
   </span>
 </h3>
           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center items-center mb-4 mt-auto gap-1">
-    <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-        Commission: ₹${deal.Commission}
-    </span>
+    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap">
+  ₹${deal.Commission} Commission
+</span>
     <span class="text-sm font-semibold text-indigo-600">
         ${deal.QuantityLeft} Left
     </span>
@@ -1460,5 +1461,3 @@ if (downloadPdfBtn) {
     loadDeals();
     handleHashChange();
 });
-
-
