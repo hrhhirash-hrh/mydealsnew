@@ -176,3 +176,22 @@ html {
   }
 }
 
+/* === Make product name fit better on mobile === */
+@media (max-width: 640px) {
+  #deals-grid h3 {
+    font-size: 0.95rem; /* smaller text */
+    white-space: nowrap; /* keeps it in one line */
+    overflow: hidden;
+    text-overflow: ellipsis; /* adds "..." if too long */
+  }
+
+  #deals-grid span.bg-green-100,
+  #deals-grid span.text-indigo-600 {
+    font-size: 0.85rem;
+  }
+
+  #deals-grid button.show-deal-btn {
+    font-size: 0.9rem;
+    padding: 8px 0;
+  }
+}
