@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvSjNOZ6P3Y5QZp0nAcaNXx4gfbfVrnye50iZaJ3iMS6apfS2DP3adnRqS5hij9dTa/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyE8ZphPleQPRELkQ7jRp8Xm6c9zUyjpirxB-WIWT1_NzBtTiAS7NmhafS4iyQK517_/exec"; // This is your last-used URL
     let adminToken = sessionStorage.getItem('adminToken');
     let currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     let currentDeals = [];
@@ -386,6 +386,8 @@ const updateHeaderUI = () => {
             productVariant: document.getElementById('productVariant').value,
             imageUrl: document.getElementById('imageUrl').value,
             productLink: document.getElementById('productLink').value,
+            storeName: document.getElementById('storeName').value,
+            bankOffer: document.getElementById('bankOffer').value,
             bookingAmount: document.getElementById('bookingAmount').value,
             commission: document.getElementById('commission').value,
             returnAmount: document.getElementById('returnAmount').value,
@@ -818,6 +820,15 @@ const updateHeaderUI = () => {
     (${deal.ProductVariant})
   </span>
 </h3>
+          <div class="flex justify-center sm:justify-start items-center gap-2 mb-3">
+              <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md">
+                  ${deal.StoreName || 'Unknown Store'}
+              </span>
+              <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
+                  ${deal.BankOffer || 'No Offer'}
+              </span>
+          </div>
+
           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center items-center mb-4 mt-auto gap-1">
     <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap">
   ₹${deal.Commission} Commission
