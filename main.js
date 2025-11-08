@@ -812,7 +812,10 @@ const updateHeaderUI = () => {
   <div class="p-6 flex flex-col justify-between flex-grow">
       <div>
           <h3 class="text-xl font-semibold mb-2 truncate text-center sm:text-left" title="${deal.ProductName} ${deal.ProductVariant}">
-  ${deal.ProductName} ${deal.ProductVariant}
+  ${deal.ProductName} 
+  <span class="text-sm text-gray-500 font-normal">
+  (${deal.ProductVariant})
+  </span>
 </h3>
           <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center items-center mb-4 mt-auto gap-1">
     <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
@@ -1457,4 +1460,5 @@ if (downloadPdfBtn) {
     loadDeals();
     handleHashChange();
 });
+
 
