@@ -195,7 +195,23 @@
                             <input type="text" id="productVariant" placeholder="Product Variant (e.g., 6/128)" class="input-field" required>
                             <input type="url" id="imageUrl" placeholder="Product Image URL" class="input-field md:col-span-2" required>
                             <input type="url" id="productLink" placeholder="Product Link (Amazon, Flipkart, etc.)" class="input-field md:col-span-2" required>
-                            <input type="text" id="storeName" placeholder="Store Name (e.g., Amazon, Flipkart)" class="input-field" required>
+                            <!-- Store Name -->
+                            <div class="md:col-span-1">
+                            <label for="storeNameSelect" class="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
+                            <select id="storeNameSelect" class="input-field" required>
+                            <option value="" disabled selected>Select Store</option>
+                            <option value="Amazon">Amazon</option>
+                            <option value="Flipkart">Flipkart</option>
+                            <option value="JioMart">JioMart</option>
+                            <option value="Reliance">Reliance</option>
+                            <option value="Other">Other</option>
+                            </select>
+                            </div>
+                            <!-- Hidden input for 'Other' store name -->
+                            <div id="otherStoreContainer" class="md:col-span-1 hidden">
+                            <label for="storeName" class="block text-sm font-medium text-gray-700 mb-1">Other Store Name</label>
+                            <input type="text" id="storeName" placeholder="Enter Store Name" class="input-field">
+                            </div>
                             <input type="text" id="bankOffer" placeholder="Bank Offer (e.g., HDFC CC EMI, SBI Debit Offer)" class="input-field" required>
                             
                             <!-- Financials -->
@@ -221,6 +237,27 @@
                                 <p id="add-deal-message" class="text-center mt-4"></p>
                             </div>
                         </form>
+
+                        <script>
+                        // Show/Hide 'Other' input when dropdown changes
+                        document.addEventListener('DOMContentLoaded', () => {
+                        const storeSelect = document.getElementById('storeNameSelect');
+                        const otherContainer = document.getElementById('otherStoreContainer');
+                        const otherInput = document.getElementById('storeName');
+
+                        storeSelect.addEventListener('change', () => {
+                        if (storeSelect.value === 'Other') {
+                        otherContainer.classList.remove('hidden');
+                        otherInput.required = true;
+                        } else {
+                        otherContainer.classList.add('hidden');
+                        otherInput.required = false;
+                        otherInput.value = '';
+                        }
+                        });
+                        });
+                    </script>
+
                     </div>
 
                     <!-- View Orders Tab Content -->
