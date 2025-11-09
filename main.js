@@ -386,7 +386,9 @@ const updateHeaderUI = () => {
             productVariant: document.getElementById('productVariant').value,
             imageUrl: document.getElementById('imageUrl').value,
             productLink: document.getElementById('productLink').value,
-            storeName: document.getElementById('storeName').value,
+            storeName: document.getElementById('storeNameSelect').value === 'Other' 
+            ? document.getElementById('storeName').value 
+            : document.getElementById('storeNameSelect').value,
             bankOffer: document.getElementById('bankOffer').value,
             bookingAmount: document.getElementById('bookingAmount').value,
             commission: document.getElementById('commission').value,
