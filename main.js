@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyE8ZphPleQPRELkQ7jRp8Xm6c9zUyjpirxB-WIWT1_NzBtTiAS7NmhafS4iyQK517_/exec"; // This is your last-used URL
-    let adminToken = sessionStorage.getItem('adminToken');
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhp8L5yN87AKZDmMmkHs_-oEjsrRYSaXTLE21loQi9J7RPdI0ZXWl9kxzPzoVZW-TN/exec"; // This is your last-used URL
+    // Restore token from sessionStorage if available
+    let adminToken = sessionStorage.getItem("adminToken") || "";
+    console.log("🟢 Restored adminToken:", adminToken);
     let currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     let currentDeals = [];
     let bookingTimerInterval = null;
@@ -454,6 +456,8 @@ const updateHeaderUI = () => {
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }
             });
             const result = await response.json();
+            console.log("🟢 Sending token:", adminToken);
+            console.log("🔵 getOrders response:", result);
 
             if (result.status === 'success') {
                 renderOrders(result.orders);
@@ -461,6 +465,7 @@ const updateHeaderUI = () => {
                 ordersContainer.innerHTML = `<p class="text-red-500">${result.message}</p>`;
             }
         } catch (error) {
+            console.error("❌ loadOrders() failed:", error);
             ordersContainer.innerHTML = `<p class="text-red-500">Failed to load orders.</p>`;
         } finally {
             ordersLoader.classList.add('hidden');
@@ -906,6 +911,7 @@ if (deal.StoreName && deal.StoreName.toLowerCase().includes('flipkart')) {
         }
 
         orders.forEach(order => {
+            const card = document.createElement('div');
             const isDelivered = order.Status === 'Delivered';
             card.className = 'bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 flex flex-col';
             card.className = 'order-card bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
