@@ -799,56 +799,93 @@ const updateHeaderUI = () => {
 
     // --- RENDER FUNCTIONS ---
 
-    const renderDeals = (deals) => {
-        dealsGrid.innerHTML = '';
-        deals.forEach(deal => {
-            const card = document.createElement('div');
-            // This class makes the card a flex-column, so mt-auto in the content works
-            card.innerHTML = `
-  <div class="h-56 w-full overflow-hidden bg-gray-200">
-      <img class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-110" 
-           src="${deal.ImageUrl}" 
-           alt="${deal.ProductName}" 
-           onerror="this.src='https://placehold.co/600x400/e2e8f0/94a3b8?text=Image+Not+Found';">
-  </div>
-  <div class="p-6 flex flex-col justify-between flex-grow">
-      <div>
-          <h3 class="text-lg sm:text-xl font-semibold mb-2 flex items-center justify-center sm:justify-start gap-1 truncate" 
-     title="${deal.ProductName} ${deal.ProductVariant}">
-  <span class="truncate">${deal.ProductName}</span>
-  <span class="text-sm text-gray-500 font-normal flex-shrink-0">
-    (${deal.ProductVariant})
-  </span>
-</h3>
-          <div class="flex justify-center sm:justify-start items-center gap-2 mb-3">
-              <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md">
-                  ${deal.StoreName || 'Unknown Store'}
-              </span>
-              <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
-                  ${deal.BankOffer || 'No Offer'}
-              </span>
+const renderDeals = (deals) => {
+  dealsGrid.innerHTML = '';
+  deals.forEach(deal => {
+    console.log('StoreName value:', deal.StoreName);
+    const card = document.createElement('div');
+
+    // 🟩 Prepare store badge with logo logic
+    const storeName = (deal.StoreName || '').toLowerCase().trim();
+    let storeBadgeHTML = '';
+
+if (deal.StoreName && deal.StoreName.toLowerCase().includes('flipkart')) {
+  storeBadgeHTML = `
+    <div class="absolute top-2 left-2 z-10 flex items-center justify-center">
+      <img src="assets/flipkart.png.png" class="h-6 sm:h-8 drop-shadow-md" alt="Flipkart">
+    </div>`;
+} else if (deal.StoreName && deal.StoreName.toLowerCase().includes('amazon')) {
+  storeBadgeHTML = `
+    <div class="absolute top-2 left-2 z-10 flex items-center justify-center">
+      <img src="assets/amazon.png.png" class="h-8 sm:h-10 drop-shadow-md" alt="Amazon">
+    </div>`;
+} else if (deal.StoreName && deal.StoreName.toLowerCase().includes('reliance')) {
+  storeBadgeHTML = `
+    <div class="absolute top-2 left-2 z-10 flex items-center justify-center">
+      <img src="assets/reliance.png.png" class="h-7 sm:h-8 drop-shadow-md" alt="Reliance">
+    </div>`;
+} else if (deal.StoreName && deal.StoreName.toLowerCase().includes('jiomart')) {
+  storeBadgeHTML = `
+    <div class="absolute top-2 left-2 z-10 flex items-center justify-center">
+      <img src="assets/jiomart.png.png" class="h-8 sm:h-10 drop-shadow-md" alt="Jiomart">
+    </div>`;
+} else if (deal.StoreName) {
+  storeBadgeHTML = `
+    <div class="absolute top-2 left-2 z-10 bg-gray-800/70 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md shadow-sm">
+      ${deal.StoreName}
+    </div>`;
+}
+
+    // 🧩 Now build the card HTML
+    card.innerHTML = `
+      <div class="relative h-56 w-full overflow-hidden bg-gray-100 rounded-t-xl">
+        
+        <!-- Store badge -->
+        ${storeBadgeHTML}
+
+        <!-- Quantity left badge -->
+        <div class="absolute top-2 right-2 z-10 bg-gray-800/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md shadow-sm">
+          ${deal.QuantityLeft} left
+        </div>
+
+        <!-- Product image -->
+        <img class="h-full w-full object-contain transition-transform duration-300 group-hover:scale-110" 
+             src="${deal.ImageUrl}" 
+             alt="${deal.ProductName}" 
+             onerror="this.src='https://placehold.co/600x400/e2e8f0/94a3b8?text=Image+Not+Found';">
+      </div>
+
+      <div class="p-6 flex flex-col justify-between flex-grow">
+        <div>
+          <h3 class="text-base sm:text-lg font-semibold mb-2 truncate text-center sm:text-left" 
+               title="${deal.ProductName} ${deal.ProductVariant}">
+            <span class="truncate">${deal.ProductName}</span>
+            <span class="text-sm text-gray-500 font-normal flex-shrink-0">
+              (${deal.ProductVariant})
+            </span>
+          </h3>
+
+          <div class="flex justify-center sm:justify-between items-center mb-3">
+            <span class="text-green-600 font-semibold text-sm">Reward ₹${deal.Commission}</span>
           </div>
 
-          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center items-center mb-4 mt-auto gap-1">
-    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap">
-  ₹${deal.Commission} Commission
-</span>
-    <span class="text-sm font-semibold text-indigo-600">
-        ${deal.QuantityLeft} Left
-    </span>
-</div>
+          <div class="border-t border-gray-200 pt-2 mb-3">
+            <div class="flex justify-center gap-2 flex-wrap">
+              <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">${deal.BankOffer || 'Offer'}</span>
+            </div>
+          </div>
+        </div>
 
-      </div>
-      <button class="show-deal-btn w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition">
+        <button class="show-deal-btn w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition">
           Show Deal
-      </button>
-  </div>
-`;
+        </button>
+      </div>
+    `;
 
-            card.querySelector('.show-deal-btn').addEventListener('click', () => showDealDetail(deal.ProductID));
-            dealsGrid.appendChild(card);
-        });
-    };
+    card.querySelector('.show-deal-btn').addEventListener('click', () => showDealDetail(deal.ProductID));
+    dealsGrid.appendChild(card);
+  });
+};
 
     /**
      * --- THIS FUNCTION IS NOW UPGRADED ---
@@ -868,7 +905,7 @@ const updateHeaderUI = () => {
 
         orders.forEach(order => {
             const isDelivered = order.Status === 'Delivered';
-            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 flex flex-col';
             card.className = 'order-card bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
             
             // --- NEW: Show delivered date if it exists ---
