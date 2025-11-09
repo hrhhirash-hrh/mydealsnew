@@ -237,27 +237,6 @@
                                 <p id="add-deal-message" class="text-center mt-4"></p>
                             </div>
                         </form>
-
-                        <script>
-                        // Show/Hide 'Other' input when dropdown changes
-                        document.addEventListener('DOMContentLoaded', () => {
-                        const storeSelect = document.getElementById('storeNameSelect');
-                        const otherContainer = document.getElementById('otherStoreContainer');
-                        const otherInput = document.getElementById('storeName');
-
-                        storeSelect.addEventListener('change', () => {
-                        if (storeSelect.value === 'Other') {
-                        otherContainer.classList.remove('hidden');
-                        otherInput.required = true;
-                        } else {
-                        otherContainer.classList.add('hidden');
-                        otherInput.required = false;
-                        otherInput.value = '';
-                        }
-                        });
-                        });
-                    </script>
-
                     </div>
 
                     <!-- View Orders Tab Content -->
@@ -600,6 +579,25 @@
 <!-- Your main JS -->
 <script src="main.js" defer></script>
 
+<script>
+window.addEventListener('load', () => {
+  const storeSelect = document.getElementById('storeNameSelect');
+  const otherContainer = document.getElementById('otherStoreContainer');
+  const otherInput = document.getElementById('storeName');
+
+  if (!storeSelect) return;
+  storeSelect.addEventListener('change', () => {
+    if (storeSelect.value === 'Other') {
+      otherContainer.classList.remove('hidden');
+      otherInput.required = true;
+    } else {
+      otherContainer.classList.add('hidden');
+      otherInput.required = false;
+      otherInput.value = '';
+    }
+  });
+});
+</script>
 
 </body>
 </html>
