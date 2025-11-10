@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhp8L5yN87AKZDmMmkHs_-oEjsrRYSaXTLE21loQi9J7RPdI0ZXWl9kxzPzoVZW-TN/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHPkDO8ZADE78Zo8tCyx3ldetvNm-scx8j4C2MQQXX7ap1zKZS5VEZyI9JlnvUZeme/exec"; // This is your last-used URL
     // Restore token from sessionStorage if available
     let adminToken = sessionStorage.getItem("adminToken") || "";
     console.log("🟢 Restored adminToken:", adminToken);
@@ -704,6 +704,7 @@ const updateHeaderUI = () => {
                 saveUserSession(result.user);
                 closeModal('user-login-modal');
                 userLoginForm.reset();
+                window.location.href = 'index.html';
             } else {
                 userLoginError.textContent = result.message || 'Login failed.';
             }
@@ -1299,8 +1300,12 @@ mobileLinks.forEach(link => {
     logoutButton.addEventListener('click', () => {
         adminToken = null;
         sessionStorage.removeItem('adminToken');
-        window.location.hash = '#';
         updateHeaderUI();
+
+        // 🔄 Auto refresh after logout (1 second delay optional)
+        setTimeout(() => {
+        window.location.reload();
+        }, 250);
     });
 
     // --- ADD THIS LISTENER ---
