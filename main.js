@@ -1313,9 +1313,11 @@ mobileLinks.forEach(link => {
         mobileLogoutButton.addEventListener('click', () => {
             adminToken = null;
             sessionStorage.removeItem('adminToken');
-            window.location.hash = '#';
             updateHeaderUI();
-            mobileMenu.classList.add('hidden'); // Also close menu
+            // Auto refresh to reset everything
+            setTimeout(() => {
+            window.location.reload();
+            }, 500);
         });
     }
 
@@ -1522,3 +1524,4 @@ if (downloadPdfBtn) {
     loadDeals();
     handleHashChange();
 });
+
