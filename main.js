@@ -664,7 +664,7 @@ const updateHeaderUI = () => {
 
             if (result.status === 'success') {
                 closeModal('booking-form-modal');
-                showMessage('Success!', 'Your deal has been booked successfully. You will receive your commission after the return period.');
+                showMessage('Success!', 'Your deal has been booked successfully. You will receive return amount once the product delivered.');
                 loadDeals();
             } else {
                 bookingError.textContent = result.message || 'Booking failed. Please try again.';
@@ -1524,5 +1524,6 @@ if (downloadPdfBtn) {
     loadDeals();
     handleHashChange();
 });
+
 
 
