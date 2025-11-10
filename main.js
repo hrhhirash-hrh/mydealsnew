@@ -1317,7 +1317,7 @@ mobileLinks.forEach(link => {
             // Auto refresh to reset everything
             setTimeout(() => {
             window.location.reload();
-            }, 500);
+            }, 250);
         });
     }
 
@@ -1524,4 +1524,5 @@ if (downloadPdfBtn) {
     loadDeals();
     handleHashChange();
 });
+
 
