@@ -70,6 +70,28 @@ html {
     box-shadow: 0 0 0 2px #c7d2fe; /* indigo-200 */
 }
 
+/* textarea style same as input-field */
+.textarea-field,
+#offerDetails,
+textarea.input-field {
+  width: 100%;
+  display: block;
+  border-radius: 0.375rem;
+  border: 1px solid #D1D5DB;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  resize: vertical;
+  min-height: 72px;
+}
+
+.textarea-field:focus,
+textarea.input-field:focus,
+#offerDetails:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px #c7d2fe;
+}
+
 /* === NEW MOBILE MENU STYLES === */
 #mobile-menu {
     background-color: white;
