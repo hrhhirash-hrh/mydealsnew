@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXcayQ5MWr8ep6DqnMIO6-UR_DW1dZXarJRHaOXhVHg8GU2_Rs4CpuNYqLv10NnPjA/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-kj2SHo5XQcK8Ea93qMfU7GXHrS0G-jHLxovKaIdeGAtdQBOK1bc3jrnLfbk4U1Pv/exec"; // This is your last-used URL
     // Restore token from sessionStorage if available
     let adminToken = sessionStorage.getItem("adminToken") || "";
     console.log("🟢 Restored adminToken:", adminToken);
@@ -400,6 +400,7 @@ const updateHeaderUI = () => {
             ? document.getElementById('storeName').value 
             : document.getElementById('storeNameSelect').value,
             bankOffer: document.getElementById('bankOffer').value,
+            offerDetails: document.getElementById('offerDetails').value,
             bookingAmount: document.getElementById('bookingAmount').value,
             commission: document.getElementById('commission').value,
             returnAmount: document.getElementById('returnAmount').value,
@@ -1198,6 +1199,7 @@ const renderUserOrders = (orders) => {
         document.getElementById('productVariant').value = deal.ProductVariant;
         document.getElementById('imageUrl').value = deal.ImageUrl;
         document.getElementById('productLink').value = deal.ProductLink;
+        document.getElementById('offerDetails').value = deal.OfferDetails || deal.offerDetails || '';
         document.getElementById('bookingAmount').value = deal.BookingAmount;
         document.getElementById('commission').value = deal.Commission;
         document.getElementById('returnAmount').value = deal.ReturnAmount;
@@ -1230,6 +1232,12 @@ const renderUserOrders = (orders) => {
         detailAddressArea.textContent = deal.AddressArea;
         detailAddressLandmark.textContent = deal.AddressLandmark || 'N/A';
         detailAddressPincode.textContent = deal.AddressPincode;
+
+            // --- NEW: show offer/note details if available ---
+        const detailOfferDetails = document.getElementById('detail-offer-details');
+        if (detailOfferDetails) {
+        detailOfferDetails.textContent = deal.OfferDetails || deal.offerDetails || '—';
+        }
 
         const newConfirmBtn = confirmDealButton.cloneNode(true);
         newConfirmBtn.id = 'confirm-deal-button';
