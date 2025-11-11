@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHPkDO8ZADE78Zo8tCyx3ldetvNm-scx8j4C2MQQXX7ap1zKZS5VEZyI9JlnvUZeme/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxXcayQ5MWr8ep6DqnMIO6-UR_DW1dZXarJRHaOXhVHg8GU2_Rs4CpuNYqLv10NnPjA/exec"; // This is your last-used URL
     // Restore token from sessionStorage if available
     let adminToken = sessionStorage.getItem("adminToken") || "";
     console.log("🟢 Restored adminToken:", adminToken);
@@ -113,12 +113,20 @@ const mobileLogoutButton = document.getElementById('mobileLogoutButton');
     // --- END NEW ---
 
     // --- ADD THESE NEW OTP SELECTORS ---
-    const otpForm = document.getElementById('otp-form');
-    const otpOrderIdHidden = document.getElementById('otp-order-id-hidden');
-    const otpInput = document.getElementById('otp-input');
-    const otpError = document.getElementById('otp-error');
-    const submitOtpBtn = document.getElementById('submit-otp-btn');
-    // --- END ADD ---
+    const otpForm = document.getElementById('otp-form');
+    const otpOrderIdHidden = document.getElementById('otp-order-id-hidden');
+    const otpInput = document.getElementById('otp-input');
+    const otpError = document.getElementById('otp-error');
+    const submitOtpBtn = document.getElementById('submit-otp-btn');
+    // --- END ADD ---
+
+    // --- ADD THESE NEW TRACKING SELECTORS ---
+    const trackingForm = document.getElementById('tracking-form');
+    const trackingOrderIdHidden = document.getElementById('tracking-order-id-hidden');
+    const trackingInput = document.getElementById('tracking-input');
+    const trackingError = document.getElementById('tracking-error');
+    const submitTrackingBtn = document.getElementById('submit-tracking-btn');
+    // --- END ADD ---
 
     // Admin Deals
     const adminDealsLoader = document.getElementById('admin-deals-loader');
@@ -584,12 +592,19 @@ const updateHeaderUI = () => {
      * --- NEW ---
      * Opens the OTP modal and sets the hidden order ID.
      */
-    const openOtpModal = (orderId) => {
-        otpOrderIdHidden.value = orderId;
-        otpInput.value = ''; // Clear old OTP
-        otpError.textContent = '';
-        showModal('otp-modal');
-    };
+     const openOtpModal = (orderId) => {
+        otpOrderIdHidden.value = orderId;
+        otpInput.value = ''; // Clear old OTP
+        otpError.textContent = '';
+        showModal('otp-modal');
+    };
+
+    const openTrackingModal = (orderId) => {
+        trackingOrderIdHidden.value = orderId;
+        trackingInput.value = '';
+        trackingError.textContent = '';
+        showModal('tracking-modal');
+    };
 
     /**
      * --- NEW ---
@@ -634,6 +649,59 @@ const updateHeaderUI = () => {
         }
     };
     // --- END ADD ---
+
+// === USER: ADD TRACKING ID HANDLER ===
+const handleTrackingSubmit = async (e) => {
+  e.preventDefault();
+  if (!currentUser) return; // user must be logged in
+
+  const orderId = trackingOrderIdHidden.value; // the order being updated
+  const trackingId = trackingInput.value.trim();
+
+  if (!trackingId) {
+    trackingError.textContent = 'Please enter a tracking ID.';
+    return;
+  }
+
+  // show loading spinner on the submit button
+  showSubmitLoading(submitTrackingBtn, true);
+  trackingError.textContent = '';
+
+  // prepare data to send to Google Apps Script
+  const payload = {
+    action: 'userAddTracking',
+    userId: currentUser.userId,
+    orderId,
+    trackingId
+  };
+
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      closeModal('tracking-modal');
+      showMessage('Success', 'Tracking ID saved successfully!');
+      // refresh the user's booking list
+      loadUserOrders();
+      // refresh admin orders too, if admin panel is open
+      if (adminToken && window.location.hash === '#admin-panel') {
+        loadOrders();
+      }
+    } else {
+      trackingError.textContent = result.message || 'Failed to save tracking ID.';
+    }
+  } catch (err) {
+    trackingError.textContent = 'An error occurred. Please try again.';
+  } finally {
+    showSubmitLoading(submitTrackingBtn, false);
+  }
+};
 
     const handleBookingSubmit = async (e) => {
         e.preventDefault();
@@ -912,6 +980,10 @@ if (deal.StoreName && deal.StoreName.toLowerCase().includes('flipkart')) {
         }
 
         orders.forEach(order => {
+            // ✅ FIX: define trackingHtmlAdmin before it's used
+            const trackingHtmlAdmin = order.TrackingID
+            ? `<p class="text-sm text-gray-700"><strong>Tracking:</strong> ${order.TrackingID}</p>`
+            : '';
             const card = document.createElement('div');
             const isDelivered = order.Status === 'Delivered';
             card.className = 'bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 flex flex-col';
@@ -937,13 +1009,14 @@ if (deal.StoreName && deal.StoreName.toLowerCase().includes('flipkart')) {
                     <div><strong>Mobile:</strong> ${order.UserMobile}</div>
                     <div><strong>Expected:</strong> ${formatISODate(order.UserDeliveryDate)}</div>
                     <div><strong>UPI:</strong> ${order.UserUpiId}</div>
-                    <div><strong>OTP:</strong> ${order.OTP || 'N/A'}</div>
+                    <div><strong>OTP:</strong> ${order.OTP || 'N/A'}</div>
                 </div>
                 <div class="mt-4 flex items-center justify-between">
                     <button class="deliver-btn ${isDelivered ? 'bg-gray-400' : 'bg-green-500 hover:bg-green-600'} text-white text-sm font-semibold py-1 px-3 rounded-md disabled:bg-gray-400" ${isDelivered ? 'disabled' : ''}>
                         ${isDelivered ? 'Delivered' : 'Mark as Delivered'}
                     </button>
                     <!-- NEW: This is where the date will appear -->
+                    ${trackingHtmlAdmin}
                     ${deliveredDateHtml}
                 </div>
             `;
@@ -980,16 +1053,29 @@ const renderUserOrders = (orders) => {
                 '';
                 
             // --- ADD THIS NEW OTP VARIABLE ---
-            const otpHtml = order.OTP ?
-                // If OTP exists, show it
-                `<div class="mt-2"><strong>OTP:</strong> ${order.OTP}</div>` :
-                // If not, show the "Add OTP" button
-                `<div class="mt-2">
-                    <button class="add-otp-btn bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold py-1 px-2 rounded-md">
-                        Add OTP
-                    </button>
-                </div>`;
-            // --- END ADD ---
+                const otpHtml = order.OTP ?
+                // If OTP exists, show it
+                `<div class="mt-2"><strong>OTP:</strong> ${order.OTP}</div>` :
+                // If not, show the "Add OTP" button
+                `<div class="mt-2">
+                    <button class="add-otp-btn bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold py-1 px-2 rounded-md">
+                        Add OTP
+                    </button>
+                </div>`;
+            // --- END ADD ---
+
+            // --- TRACKING (Admin) ---
+            const trackingHtmlAdmin = order.TrackingID
+            ? `<p class="text-sm text-gray-700"><strong>Tracking:</strong> ${order.TrackingID}</p>`
+            : '';
+
+            // --- TRACKING HTML ---
+            const trackingHtml = order.TrackingID ?
+            `<div class="mt-2"><strong>Tracking:</strong> ${order.TrackingID}</div>` :
+            `<div class="mt-2">
+            <button class="add-tracking-btn bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold py-1 px-2 rounded-md">Add Tracking</button>
+            </div>`;
+
 
             const card = document.createElement('div');
             card.className = 'bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200';
@@ -1015,6 +1101,7 @@ const renderUserOrders = (orders) => {
                     <div><strong>UPI:</strong> ${order.UserUpiId}</div>
                     ${!isDelivered ? userDeliverButtonHtml : ''} <!-- "Mark as Received" button goes here -->
                     ${otpHtml} <!-- ADD THIS LINE -->
+                    ${trackingHtml}
                 </div>
                 </div>
                             `;
@@ -1032,7 +1119,13 @@ const renderUserOrders = (orders) => {
                 }
             }
             // --- END ADD ---
-
+            // --- TRACKING button event ---
+            if (!order.TrackingID) {
+            const addTrackingBtn = card.querySelector('.add-tracking-btn');
+            if (addTrackingBtn) {
+            addTrackingBtn.addEventListener('click', () => openTrackingModal(order.OrderID));
+            }
+            }
             userOrdersContainer.appendChild(card);
         });
     };
@@ -1227,13 +1320,6 @@ const mobileLinks = [
   mobileAdminLoginLink,
   mobileLogoutButton
 ];
-mobileLinks.forEach(link => {
-  if (link) {
-    link.addEventListener('click', () => {
-      if (mobileMenu) mobileMenu.classList.add('hidden');
-    });
-  }
-});
 
 
     // --- ADD THESE NEW LISTENERS ---
@@ -1317,7 +1403,7 @@ mobileLinks.forEach(link => {
             // Auto refresh to reset everything
             setTimeout(() => {
             window.location.reload();
-            }, 250);
+            }, 500);
         });
     }
 
@@ -1516,14 +1602,12 @@ if (downloadPdfBtn) {
     // --- END NEW ---
 
     // --- ADD THIS NEW LISTENER ---
-    otpForm.addEventListener('submit', handleOtpSubmit);
-    // --- END ADD ---
+    otpForm.addEventListener('submit', handleOtpSubmit);
+    trackingForm.addEventListener('submit', handleTrackingSubmit);
+    // --- END ADD ---
 
     // --- INITIALIZATION ---
     updateHeaderUI();
     loadDeals();
     handleHashChange();
 });
-
-
-
