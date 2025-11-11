@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-kj2SHo5XQcK8Ea93qMfU7GXHrS0G-jHLxovKaIdeGAtdQBOK1bc3jrnLfbk4U1Pv/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu6SNqVOINjTc_4cGneDmUR_qRuy7aqS_82CZYd1QMqOdVwa_vAnIbuh4Ae2v5xMxR/exec"; // This is your last-used URL
     // Restore token from sessionStorage if available
     let adminToken = sessionStorage.getItem("adminToken") || "";
     console.log("🟢 Restored adminToken:", adminToken);
@@ -404,6 +404,7 @@ const updateHeaderUI = () => {
             bookingAmount: document.getElementById('bookingAmount').value,
             commission: document.getElementById('commission').value,
             returnAmount: document.getElementById('returnAmount').value,
+            buyerPrice: document.getElementById("buyerPrice").value,
             quantityNeeded: document.getElementById('quantityNeeded').value,
             code: document.getElementById('code').value,
             addressHouse: document.getElementById('addressHouse').value,
@@ -801,6 +802,35 @@ const handleTrackingSubmit = async (e) => {
 
             if (result.status === 'success') {
                 renderUserOrders(result.orders);
+
+                // --- NEW: Calculate totals and show summary ---
+                let totalOrders = result.orders.length;
+                let totalCommission = 0;
+
+                // Loop through each order and sum up commission
+                result.orders.forEach(o => {
+                let commission = parseFloat(o.Commission || o.Reward || 0);
+                  if (!isNaN(commission)) totalCommission += commission;
+                });
+
+                // Find or create summary box element
+                let summaryBox = document.getElementById('user-summary-box');
+                if (!summaryBox) {
+                  summaryBox = document.createElement('div');
+                  summaryBox.id = 'user-summary-box';
+                  summaryBox.className = 'bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg p-3 mb-4 text-sm font-medium';
+                  userOrdersContainer.parentNode.insertBefore(summaryBox, userOrdersContainer);
+                }
+
+                // Set summary text
+                summaryBox.innerHTML = `
+                  <div class="flex justify-between items-center">
+                <span>🧾 Total Orders: <strong>${totalOrders}</strong></span>
+                <span>💰 Total Commission: <strong>₹${totalCommission.toFixed(2)}</strong></span>
+              </div>
+                `;
+
+
             } else {
                 userOrdersContainer.innerHTML = `<p class="text-red-500">${result.message}</p>`;
             }
@@ -1002,6 +1032,7 @@ if (deal.StoreName && deal.StoreName.toLowerCase().includes('flipkart')) {
                         <p class="text-xs text-gray-500">Order ID: ${order.OrderID}</p>
                         <p class="text-xs text-gray-500">Placed: ${order.OrderTimestamp}</p> 
                         <p class="text-xs text-gray-600 font-medium">User: ${order.UserID || 'N/A'}</p>
+                        <p class="text-xs text-gray-600 font-medium">Buyer Price: ₹${order.BuyerPrice || 'N/A'}</p>
                     </div>
                     <span class="order-status inline-block ${isDelivered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'} text-xs font-medium px-2.5 py-0.5 rounded-full">${order.Status}</span>
                 </div>
@@ -1094,6 +1125,8 @@ const renderUserOrders = (orders) => {
                     <div class="space-y-2">
                     <div><strong>Name:</strong> ${order.UserName}</div>
                     <div><strong>Expected:</strong> ${formatISODate(order.UserDeliveryDate)}</div>
+                    <div><strong>Price:</strong> ₹${order.ReturnAmount || 'N/A'}</div>
+                    <div><strong>Commission:</strong> ₹${order.Commission || '0.00'}</div>
                     ${isDelivered ? deliveredDateHtml : ''} <!-- Delivered date goes here -->
                     </div>
                     <!-- Right Column -->
