@@ -568,6 +568,32 @@
     <!-- === END OF NEW OTP MODAL === -->
 
     <!-- === END OF NEW MODALS === -->
+
+    <!-- Tracking ID Modal -->
+<div id="tracking-modal" class="modal hidden">
+  <div class="modal-bg" onclick="closeModal('tracking-modal')"></div>
+  <div class="modal-content p-6">
+    <h3 class="text-2xl font-bold text-gray-900 mb-4">Add Tracking ID</h3>
+    <form id="tracking-form">
+      <input type="hidden" id="tracking-order-id-hidden">
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600">Enter the tracking ID for this order.</p>
+        <input type="text" id="tracking-input" placeholder="Enter tracking id" class="input-field" required>
+        <p id="tracking-error" class="text-red-500 text-sm text-center"></p>
+        <div class="flex justify-end gap-4 pt-4">
+          <button type="button" onclick="closeModal('tracking-modal')" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+            Cancel
+          </button>
+          <button type="submit" id="submit-tracking-btn" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700">
+            <span class="submit-text">Save Tracking</span>
+            <span class="submit-spinner hidden"><div class="spinner !w-6 !h-6 border-white/30 border-l-white mx-auto"></div></span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
     <!-- Load your custom JavaScript -->
 <!-- For Excel export -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
