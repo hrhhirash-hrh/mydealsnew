@@ -75,7 +75,8 @@ html {
     background-color: white;
     position: absolute;
     width: 100%;
-    z-index: 30;
+    z-index: 40;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid #e5e7eb; /* gray-200 */
 }
 
