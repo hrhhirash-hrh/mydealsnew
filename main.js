@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE ---
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu6SNqVOINjTc_4cGneDmUR_qRuy7aqS_82CZYd1QMqOdVwa_vAnIbuh4Ae2v5xMxR/exec"; // This is your last-used URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxsu2KViBglE6o-mrfTf2gql5n7kYD18ttycE_WSc-vBAECmow1VZiDA5gVy78tMFoS/exec"; // This is your last-used URL
     // Restore token from sessionStorage if available
     let adminToken = sessionStorage.getItem("adminToken") || "";
     console.log("🟢 Restored adminToken:", adminToken);
@@ -1652,3 +1652,4 @@ if (downloadPdfBtn) {
     loadDeals();
     handleHashChange();
 });
+
